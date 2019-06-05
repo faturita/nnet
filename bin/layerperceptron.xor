@@ -1,0 +1,15 @@
+layer.size=2
+layer.0=4
+layer.1=4
+layer.2=1
+log.filename=layerperceptron.log.xor
+pattern.filename=layerperceptron.pattern.conf.xor4
+reply.factor=400000
+accuracy=0.0
+delta.li=0.5
+delta.weight=0.1
+
+
+
+
+
