@@ -1,9 +1,6 @@
-# nnet
+# NNet
 Deep Neural Networks from scratch
-Simulacion Red Hopfield 82 y Modelo de Ising
-
-Autor: Rodrigo Ramele
-Materia: Redes Neuronales
+Featuring Hopfield 82 and Ising Model
 
 Resumen:
 
@@ -50,37 +47,31 @@ Sinapsis:
 Consulte ./bin/parameter.conf  para verificar como configurar la red.
 
 
+# Ising
 ./bin/Ising
 
 Ejecuta 10 simulaciones del Modelo de Ising obteniendo el valor correspondiente
 a la temperatura critica, como promedio de los valores donde se obtiene el 90 % 
-de la magnetizacion.Los parametros utilizados en la simulacion son los siguientes:
+de la magnetizacion. Los parametros utilizados en la simulacion son los siguientes:
 
-J:Interaccion entre spines = 1
-H:Magnetizacion externa    = 1
-k:Constante de Boltzmann   = 1
-T:Temperatura inicial      = 10
+* J:Interaccion entre spines = 1
+* H:Magnetizacion externa    = 1
+* k:Constante de Boltzmann   = 1
+* T:Temperatura inicial      = 10
 
 
 La salida la genera en el archivo "ising.log"
 
 
-Dumps:
+# Dumps:
 
 En ./dumps/ se encuentran las salidas de los procesos ejecutados:
 
-hopnet.200.10.log		Salida comprobacion conexiones perdidas en
-						una red de 200 neuronas y 10 patrones
-
-hopnet.300.30.log		Salida comprobación conexiones perdidas en 
-						una red de 300 neuronas y 30 patrones
-
-hopnet.400.50.log		Salida comprobación conexiones perdidas en
-						una red de 400 neuronas y 50 patrones
-
-hopnet.capacity.log		Salida comprobación capacidad de la red.
-
-ising.log				Salida obtención Temperatura Crítica 
+* hopnet.200.10.log		Salida comprobacion conexiones perdidas en una red de 200 neuronas y 10 patrones
+* hopnet.300.30.log		Salida comprobación conexiones perdidas en una red de 300 neuronas y 30 patrones
+* hopnet.400.50.log		Salida comprobación conexiones perdidas enuna red de 400 neuronas y 50 patrones
+* hopnet.capacity.log		Salida comprobación capacidad de la red.
+* ising.log                       Salida obtención Temperatura Crítica
 
 
 

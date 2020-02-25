@@ -1,0 +1,13 @@
+layer.size=5
+layer.0=16
+layer.1=8
+layer.2=4
+layer.3=2
+layer.4=4
+layer.5=16
+log.filename=autoencoder.log
+pattern.filename=autoencoder.pattern.conf.image
+reply.factor=4000000
+accuracy=0.0
+delta.li=0.5
+delta.weight=0.1

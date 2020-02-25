@@ -5,45 +5,45 @@
  *
  **/
 void getQuickValue(char *buffer, char *searchKey, char *filename) {
-	static FILE *pf=NULL;
-   char vAux[MAXSIZE];
-   char elements[MAXSIZE];
-   char key[MAXSIZE];
-   int keylen;
+    static FILE *pf=NULL;
+    char vAux[MAXSIZE];
+    char elements[MAXSIZE];
+    char key[MAXSIZE];
+    int keylen;
 
-   // Inicializar valor con ""
-   strcpy(buffer,"");
+    // Inicializar valor con ""
+    strcpy(buffer,"");
 
-   if (pf == NULL)
-	   pf = fopen(filename,"r");
+    if (pf == NULL)
+        pf = fopen(filename,"r");
 
-   if (pf == NULL) {
-      printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
-      return;
-   }
-   
+    if (pf == NULL) {
+        printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
+        return;
+    }
 
-	fgets(vAux, MAXSIZE, pf);
-   while ( !feof(pf) ) {
-   	if (vAux[0] == '#' || strlen(vAux) < 3) {
-      	fgets(vAux,MAXSIZE, pf);
-         continue;
-      }
-      
-   	strcpy(elements, (char *)strstr(vAux, "="));
-      keylen = strlen(vAux)-strlen(elements);
-      strncpy(key, vAux, keylen);
-      key[keylen]='\0';
-      
-      if (strcmp(searchKey,key)==0) {
-      	strcpy(buffer,elements+1);
-         // Elimino el enter.
-         buffer[strlen(elements+1)-1]='\0';
-         break;
-      }
 
-   	fgets(vAux, MAXSIZE, pf);
-   }
+    fgets(vAux, MAXSIZE, pf);
+    while ( !feof(pf) ) {
+        if (vAux[0] == '#' || strlen(vAux) < 3) {
+            fgets(vAux,MAXSIZE, pf);
+            continue;
+        }
+
+        strcpy(elements, (char *)strstr(vAux, "="));
+        keylen = strlen(vAux)-strlen(elements);
+        strncpy(key, vAux, keylen);
+        key[keylen]='\0';
+
+        if (strcmp(searchKey,key)==0) {
+            strcpy(buffer,elements+1);
+            // Elimino el enter.
+            buffer[strlen(elements+1)-1]='\0';
+            break;
+        }
+
+        fgets(vAux, MAXSIZE, pf);
+    }
 
 }
 
@@ -56,46 +56,49 @@ void getQuickValue(char *buffer, char *searchKey, char *filename) {
  *
  **/
 void getValue(char *buffer, char *searchKey, char *filename) {
-   FILE *pf;
-   char vAux[MAXSIZE];
-   char elements[MAXSIZE];
-   char key[MAXSIZE];
-   int keylen;
+    FILE *pf;
+    char vAux[MAXSIZE];
+    char elements[MAXSIZE];
+    char key[MAXSIZE];
+    int keylen;
 
-   // Inicializar valor con ""
-   strcpy(buffer,"");
+    // Inicializar valor con ""
+    strcpy(buffer,"");
 
-   pf = fopen(filename,"r");
+    pf = fopen(filename,"r");
 
-   if (pf == NULL) {
-      printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
-      return;
-   }
-   
+    if (pf == NULL) {
+        printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
+        exit(-1);
+    }
 
-	fgets(vAux, MAXSIZE, pf);
-   while ( !feof(pf) ) {
-   	if (vAux[0] == '#' || strlen(vAux) < 3) {
-      	fgets(vAux,MAXSIZE, pf);
-         continue;
-      }
-      
-   	strcpy(elements, (char *)strstr(vAux, "="));
-      keylen = strlen(vAux)-strlen(elements);
-      strncpy(key, vAux, keylen);
-      key[keylen]='\0';
-      
-      if (strcmp(searchKey,key)==0) {
-      	strcpy(buffer,elements+1);
-         // Elimino el enter.
-         buffer[strlen(elements+1)-1]='\0';
-         break;
-      }
+    fgets(vAux, MAXSIZE, pf);
+    while ( !feof(pf) ) {
+        // Eliminates comments
+        if (vAux[0] == '#' || strlen(vAux) < 3) {
+            fgets(vAux,MAXSIZE, pf);
+            continue;
+        }
 
-   	fgets(vAux, MAXSIZE, pf);
-   }
+        if (strstr(vAux, "=") != NULL)
+        {
+            strcpy(elements, (char *)strstr(vAux, "="));
+            keylen = strlen(vAux)-strlen(elements);
+            strncpy(key, vAux, keylen);
+            key[keylen]='\0';
 
-   fclose(pf);
+            if (strcmp(searchKey,key)==0) {
+                strcpy(buffer,elements+1);
+                // Elimino el enter.
+                buffer[strlen(elements+1)-1]='\0';
+                break;
+            }
+        }
+
+        fgets(vAux, MAXSIZE, pf);
+    }
+
+    fclose(pf);
 }
 
 
@@ -116,7 +119,7 @@ void readToken(char vAux[MAXSIZE],FILE *pf ) {
 }
 
 void getParameter(int *N, int *P, int *LC, int *N_MIN, int *N_MAX, int *N_INTERVAL) {
-	getParameterWithFileName("parameter.conf", N, P, LC, N_MIN, N_MAX, N_INTERVAL);
+    getParameterWithFileName("parameter.conf", N, P, LC, N_MIN, N_MAX, N_INTERVAL);
 }
 
 /**

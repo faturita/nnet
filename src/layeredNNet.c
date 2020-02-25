@@ -115,6 +115,8 @@ initLearningPatterns (neuron *** X, neuron *** Y, char *filename)
 	int p;
 	char buffer[MAXSIZE];
 
+    printf ("Reading file...\n");
+
 	// Parametro de cantidad de patrones.
 	getValue (buffer, "pattern.size", filename);
 	iSize = atoi (buffer);
