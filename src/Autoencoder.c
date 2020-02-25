@@ -139,8 +139,6 @@ main (int argc, char *argv[])
 
 		// Evoluciona la red
 		evolveLayeredNN (W, E);
-		if (bShowOutputFx)
-			printf ("%12.10f", fx (E[0][1], E[0][2], E[0][3]));
 		printf (">");
 		//printf ("%12.10f",E[D][0]);
 		showRNeuron (E[D], Di[D]);
@@ -150,21 +148,21 @@ main (int argc, char *argv[])
 	// Cierre del archivo de log
 	fclose (pfLogFile);
 
-	exit (0);
+    exit (0); // END
 	
-	// Verifica la red con patrones generados al azar.
-	for (s = 0; s < patternSize; s++)
-	{
-		E[0][0] = -1;	// Fixed
-		for (i = 0 + 1; i < Di[0] + 1; i++)
-		{
-			//E[0][i]=( getNaturalMinMaxProb(-1,1)>0 ? 1 : -1);
-			E[0][i] = getNaturalMinMaxProb (-1, 1);
-		}
+    // Verifica la red con patrones generados al azar.
+    for (s = 0; s < patternSize; s++)
+    {
+        E[0][0] = -1;	// Fixed
+        for (i = 0 + 1; i < Di[0] + 1; i++)
+        {
+            E[0][i]=( getNaturalMinMaxProb(-1,1)>0 ? 1 : -1);
+            //E[0][i] = getNaturalMinMaxProb (-1, 1);
+        }
 
-		showRNeuron (E[0], Di[0]);
-		evolveLayeredNN (W, E);
-		showRNeuron (E[D], Di[D]);
-		printf ("\n");
-	}
+        showRNeuron (E[0], Di[0]);
+        evolveLayeredNN (W, E);
+        showRNeuron (E[D], Di[D]);
+        printf ("\n");
+    }
 }

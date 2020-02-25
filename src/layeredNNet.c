@@ -203,7 +203,6 @@ config (char *filename)
 {
 	char buffer[MAXSIZE];
 	char aux1[MAXSIZE];
-	char aux2[MAXSIZE];
 	int k;
 
 	getValue (buffer, "layer.size", filename);
@@ -293,9 +292,9 @@ evolve (neuron * X, weight * W, int i, int jMax)
 	}
 
 	// TODO: Generalize this
-	//return sgn(aux);
+    //return sgn(aux);
 	//return expsigmoid(aux);
-	return tanhsigmoid (aux);
+    return tanhsigmoid (aux);
 }
 
 
@@ -393,7 +392,6 @@ learn_backprop (weight ** W, neuron ** E, neuron * Y)
 	neuron **Li;
 	int k, j, i;
 	int bLearn = 0;
-	neuron aux;
 
 	// Estructura para contener los valores de retropropagacion del error
 	Li = (neuron **) malloc (sizeof (neuron *) * (D));
@@ -416,11 +414,11 @@ learn_backprop (weight ** W, neuron ** E, neuron * Y)
 		{
 			for (j = 0; j < Di[k - 1]; j++)
 			{
-				// TODO: we are missing the momentum value
+                // @TODO: we are missing the momentum value
 				dW = (weight) ((DELTA_WEIGHT) *
 					       Li[(k) - 1][i] * E[k - 1][j]);
 
-				if (abs (dW) > ACCURACY)
+                if (fabs (dW) > ACCURACY)
 					bLearn = 1;
 
 				*(W[k - 1] + Di[k - 1] * i + j) += dW;
@@ -511,11 +509,11 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 	int iChance;
 	int j;
 	int iMUpdate = 0;
-	float fQErr;
 	int *bLearnVector;
 
 	bLearnVector = (int *) malloc (sizeof (int) * patternSize);
 
+    // @FIXME memset
 	for (j = 0; j < patternSize; j++)
 		bLearnVector[j] = 0;
 
@@ -567,7 +565,7 @@ learn (weight ** W, neuron ** E, neuron * Y)
 	{
 		dW = (weight) (0.0001 * E[0][j] * (Y[0] - E[1][0]));
 
-		if (abs (dW) > ACCURACY)
+        if (fabs (dW) > ACCURACY)
 			bLearn = 1;
 
 		*(W[0] + Di[0] * 0 + j) += dW;
