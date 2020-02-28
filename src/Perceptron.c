@@ -13,6 +13,9 @@
 #include "layeredNNet.c"
 
 FILE *pfLogFile;
+FILE *pfInput;
+FILE *pfOutput;
+
 
 int
 main (int argc, char *argv[])
@@ -64,8 +67,20 @@ main (int argc, char *argv[])
 		printf ("Modo: no logging.\n");
 	}
 
+    getValue(logFilename, "log.input", argv[1]);
+    if ((pfInput = fopen (logFilename, "w+")) == NULL)
+    {
+        printf ("Modo: no logging.\n");
+    }
+    getValue(logFilename, "log.output", argv[1]);
+    if ((pfOutput = fopen (logFilename, "w+")) == NULL)
+    {
+        printf ("Modo: no logging.\n");
+    }
+
 	// Obtiene pesos sinapticos al azar para la matriz de pesos sinapticos.
 	getRandomWeight (W);
+    showNLWeight (W, Di, D);
 
 	// Nombre del archivo de configuracion con los patrones a aprender
 	getValue (patternFilename, "pattern.filename", argv[1]);
@@ -107,6 +122,11 @@ main (int argc, char *argv[])
 		//printf ("%12.10f",E[D][0]);
 		showRNeuron (E[D], Di[D]);
 		printf ("\n");
+
+        logFile(pfInput, E[0], Di[0]);
+
+        logFile(pfOutput, E[D], Di[D]);
+
 	}
 	
 	// Cierre del archivo de log

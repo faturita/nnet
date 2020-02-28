@@ -43,6 +43,19 @@ void showDNeuron(int *E,int iSize)
 
 }
 
+void logFile(FILE* pf, neuron *E, int iSize)
+{
+    if (!pf) return;
+
+    for (int i=0;i<iSize;i++) {
+       fprintf(pf,"%10.6f",*(E+i));
+       if (i+1<iSize)
+         fprintf (pf,",");
+    }
+    fprintf(pf,"\n");
+    fflush(pf);
+}
+
 /*
  * Muestra por pantalla la memoria E
  */

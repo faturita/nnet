@@ -10,16 +10,19 @@
 #include <stdio.h>
 #include <string.h>
 
+// Tipo de dato para las salidas de las nueronas.
+#ifndef NEURONTYPE
+#define NEURONTYPE
+typedef int neuron;
+typedef float weight;
+#endif
+
 #include "parameter.h"
 #include "mathNeuron.h"
 #include "arrayView.h"
 
 // Cantidad de iteraciones
 #define REPLY_FACTOR (N*N*P)
-
-// Tipo de dato para las salidas de las nueronas.
-typedef int neuron;
-typedef float weight;
 
 
 int N;                  // Cantidad de Neuronas de la red.

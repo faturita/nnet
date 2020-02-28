@@ -1,6 +1,16 @@
+#include <stdio.h>
+
+
 // Formato para mostrar los resultados
 #define DISPLAY_FORMAT_FLOAT "%8.6f"
 #define DISPLAY_FORMAT       "%d"
+
+#ifndef NEURONTYPE
+#define NEURONTYPE
+typedef float neuron;
+typedef float weight;
+#endif
+
 
 /**
  * Muestra por stdout el vector E de dimension iSize
@@ -30,3 +40,5 @@ void showWeight(float *W, int iMax, int jMax);
  *
  **/
 void showNLWeight(float **W, int *Di, int D);
+void logFile(FILE *pf, neuron *E, int iSize);
+

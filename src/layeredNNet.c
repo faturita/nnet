@@ -16,21 +16,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef NEURONTYPE
+#define NEURONTYPE
+// Tipo de dato para las salidas y entradas de las neuronas
+typedef float neuron;
+// Tipo de dato para los pesos sinapticos
+typedef float weight;
+#endif
+
+
 #include "mathNeuron.h"
 #include "arrayView.h"
 #include "parameter.h"
 #include "logger.h"
 
-// Tipo de dato para las salidas y entradas de las neuronas
-typedef float neuron;
-// Tipo de dato para los pesos sinapticos
-typedef float weight;
 
 // Cantidad de iteraciones con variaciones de los pesos sinapticos nulas
 long REPLY_FACTOR;
 
 // Ajuste sobre el cual se determina si un peso sinaptico varia o no.
-long ACCURACY;
+float ACCURACY;
 
 // Factor sobre el impacto de los valores de salida sobre los pesos sinapticos
 // de las neuronas en las capas internas
@@ -212,7 +217,7 @@ config (char *filename)
 	REPLY_FACTOR = atol (buffer);
 
 	getValue (buffer, "accuracy", filename);
-	ACCURACY = atol (buffer);
+    ACCURACY = atof (buffer);
 
 	getValue (buffer, "delta.li", filename);
 	LI_E = atof (buffer);
@@ -399,6 +404,8 @@ learn_backprop (weight ** W, neuron ** E, neuron * Y)
 	for (k = D; k > 0; k--)
 	{
 		*(Li + (k - 1)) = (neuron *) malloc (sizeof (neuron) * Di[k]);
+
+        memset(*(Li + (k - 1)),0,sizeof (neuron) * Di[k]);
 	}
 
 	// Evoluciona la red
@@ -418,8 +425,12 @@ learn_backprop (weight ** W, neuron ** E, neuron * Y)
 				dW = (weight) ((DELTA_WEIGHT) *
 					       Li[(k) - 1][i] * E[k - 1][j]);
 
+                // Incrementando ACCURACY haces que la red sea mas laxa en la condicion de terminacion.
                 if (fabs (dW) > ACCURACY)
+                {
 					bLearn = 1;
+                    // Si bLearn true, entonces la red sigue intentando aprender.
+                }
 
 				*(W[k - 1] + Di[k - 1] * i + j) += dW;
 			}
@@ -473,16 +484,18 @@ getQuadraticError (float **W, float **E, float **X, float **Y,
 	return fQErr;
 }
 
-void
+float
 logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
 		   int patternSize)
 {
+    float rms=getQuadraticError (W, E, X, Y, patternSize);
 	if (isLogging ())
 	{
 		sprintf (logBuffer, "%12.10f\n",
-			 getQuadraticError (W, E, X, Y, patternSize));
+             rms);
 		logInfo (logBuffer);
 	}
+    return rms;
 }
 
 /**
@@ -510,6 +523,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 	int j;
 	int iMUpdate = 0;
 	int *bLearnVector;
+    float rms=1;
 
 	bLearnVector = (int *) malloc (sizeof (int) * patternSize);
 
@@ -533,6 +547,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 			E[0][j] = X[iChance][j - 1];
 		}
 
+        // Ajustar los pesos hasta que x REPLY_FACTOR repeticiones no se perciban cambios.
 		if (learn_backprop (W, E, Y[iChance]) == 0)
 		{
 			bLearn++;
@@ -541,7 +556,9 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 		// Log info solo si la salida es unidimensional
 		if ((iMUpdate % patternSize) == 0)
 		{
-			logQuadraticError (W, E, X, Y, patternSize);
+            rms = logQuadraticError (W, E, X, Y, patternSize);
+            if (rms < 0.0005)
+                break;
 		}
 	}
 
