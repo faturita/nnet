@@ -18,24 +18,24 @@
  *
  **/
     void
-generateAutoencoderTrainningSet ()
+generateAutoencoderTrainningSet (int iSize)
 {
-    int x[16];
+    int x[iSize];
     int i, j, k;
 
     printf ("pattern.size=125\n\n");
     for (i = 0; i < 125; i++)
     {
-        for (j = 0; j < 16; j++)
+        for (j = 0; j < iSize; j++)
         {
             x[j] = ( getNaturalMinMaxProb(-1,1)>0 ? 1 : -1);
         }
-        for (j = 0; j < 16; j++)
+        for (j = 0; j < iSize; j++)
         {
             printf ("pattern.in.%d.%d=%d\n",
                 i,j,x[j]);
         }
-        for (j = 0; j < 16; j++)
+        for (j = 0; j < iSize; j++)
         {
             printf ("pattern.out.%d.%d=%d\n",
                 i,j,x[j]);
@@ -66,7 +66,7 @@ main (int argc, char *argv[])
 
     printf ("Autoencoders\n");
 
-	if (argc != 2)
+    if (argc < 2)
 	{
 		printf ("\nSinopsis:\n");
 		printf ("%s    [archivo de configuracion inicial]\n",
@@ -75,16 +75,16 @@ main (int argc, char *argv[])
 		exit (-1);
 	}
 
-	if (strcmp (argv[1], "-f") == 0)
+    // Configuracion de la red
+    config (argv[1]);
+
+    if ((argc >2 && strcmp (argv[2], "-f") == 0))
 	{
 		// Auxiliar: Ejecucion de la generacion de los patrones para aprender
 		// una funcion especifica.
-        generateAutoencoderTrainningSet ();
+        generateAutoencoderTrainningSet (Di[0]);
 		exit (0);
 	}
-
-	// Configuracion de la red
-	config (argv[1]);
 
 	// Inicializacion de la red en base a la configucaion (variables globales)
 	init (&W, &E);

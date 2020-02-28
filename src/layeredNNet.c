@@ -557,7 +557,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 		if ((iMUpdate % patternSize) == 0)
 		{
             rms = logQuadraticError (W, E, X, Y, patternSize);
-            if (rms < 0.0005)
+            if (rms < 0.0005) // @TODO add me as a parameter
                 break;
 		}
 	}
