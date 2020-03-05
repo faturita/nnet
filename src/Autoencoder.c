@@ -12,6 +12,9 @@
  **/
 #include "layeredNNet.c"
 
+#include "signal.h"
+
+
 // Declare and Init the font array data
 int const Font1[32][7] = {
    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // 0x20, space
@@ -202,6 +205,16 @@ generateAutoencoderTrainningSet (int iSize)
 }
 
 
+void sigintHandler(int sig_num)
+{
+    /* Reset handler to catch SIGINT next time.
+       Refer http://en.cppreference.com/w/c/program/signal */
+    signal(SIGINT, sigintHandler);
+    forceBreak = 1;
+    fflush(stdout);
+}
+
+
 FILE *pfLogFile;
 FILE *pfInput;
 FILE *pfOutput;
@@ -223,6 +236,7 @@ main (int argc, char *argv[])
 	int bShowOutputFx = 0;	// Marca para mostrar el valor de la funcion en la salida.
 
     printf ("Autoencoders\n");
+    signal(SIGINT, sigintHandler);
 
     if (argc < 2)
 	{

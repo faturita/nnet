@@ -47,6 +47,9 @@ float DELTA_WEIGHT;
 // Parametro del momentum
 float MOMENTUM;
 
+// Valor de corte de RMS.
+float RMS_BREAK;
+
 // Cantidad de layers para el perceptron (camino maximo del grafo)
 int D;
 
@@ -55,6 +58,8 @@ int D;
 int *Di;
 
 unsigned int timeseed;
+
+int forceBreak = 0;
 
 /**
  * init
@@ -282,6 +287,11 @@ config (char *filename)
     if (strlen(buffer)>1)
         MOMENTUM = atof(buffer);
 
+    RMS_BREAK = 0.1;
+    getValue(buffer,"rms.break", filename);
+    if (strlen(buffer)>1)
+        RMS_BREAK = atof(buffer);
+
 	// +1 por las entradas
 	Di = (int *) malloc (sizeof (int) * (D + 1));
 
@@ -324,7 +334,7 @@ getRandomWeight (weight ** W)
 		{
 			for (j = 0; j < Di[k + 1]; j++)
 			{
-                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * 0.1;
+                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * 0.01;
 			}
 		}
 	}
@@ -482,10 +492,11 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
 					       Li[(k) - 1][i] * E[k - 1][j]);
 
                 // Incrementando ACCURACY haces que la red sea mas laxa en la condicion de terminacion.
-                if (fabs (dW) > ACCURACY)
+                if (fabs (dW) > 0.001)
                 {
 					bLearn = 1;
                     // Si bLearn true, entonces la red sigue intentando aprender.
+                    // @FIXME El valor suele ser muy chico si la dimension es mayor a 1
                 }
 
                 //*(W[k - 1] + Di[k - 1] * i + j) += dW;
@@ -603,7 +614,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 
     initDW(&DW);
 
-	while (bLearn < REPLY_FACTOR)
+    while (bLearn < REPLY_FACTOR && (forceBreak == 0))
 	{
 		iMUpdate++;
 		iChance = getProb (0, patternSize);
@@ -623,18 +634,20 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 		if ((iMUpdate % patternSize) == 0)
 		{
             rms = logQuadraticError (W, E, X, Y, patternSize);
-            if (rms < 0.01)
+            if (rms < RMS_BREAK)
                 break;
 
             //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
             //    break;
 		}
 
-        if (iMUpdate % 10000 == 0)
+        if (iMUpdate % 100000 == 0)
         {
             printf("%ld:%d\n", iMUpdate, bLearn);
         }
 	}
+
+    printf("Steps: %ld\n", iMUpdate);
 
     freeDW (&DW);
 	free (bLearnVector);

@@ -45,4 +45,6 @@ ax1.plot(data,'r', label='RMS')
 plt.legend(loc='upper left')
 plt.show()
 
+plt.savefig('output.png', bbox_inches='tight')
+
 
