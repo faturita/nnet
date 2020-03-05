@@ -75,42 +75,42 @@ int forceBreak = 0;
 void
 init (weight *** W, neuron *** E)
 {
-	int i = 0;
+    int i = 0;
 
-	// D la cantidad de capas con neuronas (sin contar la entrada).
-	*W = (weight **) malloc (sizeof (weight *) * D);
-	*E = (neuron **) malloc (sizeof (weight *) * (D + 1));
+    // D la cantidad de capas con neuronas (sin contar la entrada).
+    *W = (weight **) malloc (sizeof (weight *) * D);
+    *E = (neuron **) malloc (sizeof (weight *) * (D + 1));
 
-	if (*W == NULL || *E == NULL)
-	{
-		printf ("No hay suficiente memoria.\n");
-		exit (-1);
-	}
+    if (*W == NULL || *E == NULL)
+    {
+        printf ("No hay suficiente memoria.\n");
+        exit (-1);
+    }
 
-	// Inicializacion de los vectores de salidas de cada capa.
-	// Cada layer es de tamanio Di[i]
-	for (i = 0; i < (D + 1); i++)
-	{
-		(*E)[i] = (neuron *) malloc (sizeof (neuron) * Di[i]);
-		if ((*E)[i] == NULL)
-		{
-			printf ("No hay suficiente memoria.\n");
-			exit (-1);
-		}
-	}
+    // Inicializacion de los vectores de salidas de cada capa.
+    // Cada layer es de tamanio Di[i]
+    for (i = 0; i < (D + 1); i++)
+    {
+        (*E)[i] = (neuron *) malloc (sizeof (neuron) * Di[i]);
+        if ((*E)[i] == NULL)
+        {
+            printf ("No hay suficiente memoria.\n");
+            exit (-1);
+        }
+    }
 
-	// Inicializacion matriz con los pesos sinapticos para todas las capas.
-	for (i = 0; i < D; i++)
-	{
-		(*W)[i] =
-			(weight *) malloc (sizeof (weight) *
-					   (Di[i] * Di[i + 1]));
-		if ((*W)[i] == NULL)
-		{
-			printf ("No hay suficiente memoria.\n");
-			exit (-1);
-		}
-	}
+    // Inicializacion matriz con los pesos sinapticos para todas las capas.
+    for (i = 0; i < D; i++)
+    {
+        (*W)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i] * Di[i + 1]));
+        if ((*W)[i] == NULL)
+        {
+            printf ("No hay suficiente memoria.\n");
+            exit (-1);
+        }
+    }
 
 }
 
@@ -131,8 +131,8 @@ void initDW(weight ***DW)
     for (int i = 0; i < D; i++)
     {
         (*DW)[i] =
-            (weight *) malloc (sizeof (weight) *
-                       (Di[i] * Di[i + 1]));
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i] * Di[i + 1]));
         if ((*DW)[i] == NULL)
         {
             printf ("No hay suficiente memoria.\n");
@@ -168,38 +168,38 @@ void freeDW(weight ***DW)
 void
 initLearningPatterns (neuron *** X, neuron *** Y, char *filename)
 {
-	int iSize;
-	int p;
-	char buffer[MAXSIZE];
+    int iSize;
+    int p;
+    char buffer[MAXSIZE];
 
     printf ("Reading file...\n");
 
-	// Parametro de cantidad de patrones.
-	getValue (buffer, "pattern.size", filename);
-	iSize = atoi (buffer);
+    // Parametro de cantidad de patrones.
+    getValue (buffer, "pattern.size", filename);
+    iSize = atoi (buffer);
 
-	*X = (neuron **) malloc (sizeof (neuron *) * iSize);
-	*Y = (neuron **) malloc (sizeof (neuron *) * iSize);
+    *X = (neuron **) malloc (sizeof (neuron *) * iSize);
+    *Y = (neuron **) malloc (sizeof (neuron *) * iSize);
 
-	if (((*X) == NULL) || ((*Y) == NULL))
-	{
-		printf ("No hay suficiente memoria.\n");
-		exit (-1);
-	}
+    if (((*X) == NULL) || ((*Y) == NULL))
+    {
+        printf ("No hay suficiente memoria.\n");
+        exit (-1);
+    }
 
-	for (p = 0; p < iSize; p++)
-	{
-		// Di[0]-1 son la cantidad de entradas disponibles sobre la red.
-		// Di[D] son la cantidad de neuronas en la capa final, por ende, la dimension de salida.
-		*(*X + p) = (neuron *) malloc (sizeof (neuron) * Di[0] - 1);	// -1 por el bias
-		*(*Y + p) = (neuron *) malloc (sizeof (neuron) * Di[D]);
+    for (p = 0; p < iSize; p++)
+    {
+        // Di[0]-1 son la cantidad de entradas disponibles sobre la red.
+        // Di[D] son la cantidad de neuronas en la capa final, por ende, la dimension de salida.
+        *(*X + p) = (neuron *) malloc (sizeof (neuron) * Di[0] - 1);	// -1 por el bias
+        *(*Y + p) = (neuron *) malloc (sizeof (neuron) * Di[D]);
 
-		if (((*X + p) == NULL) || (*(*Y + p) == NULL))
-		{
-			printf ("No hay suficiente memoria.\n");
-			exit (-1);
-		}
-	}
+        if (((*X + p) == NULL) || (*(*Y + p) == NULL))
+        {
+            printf ("No hay suficiente memoria.\n");
+            exit (-1);
+        }
+    }
 }
 
 /**
@@ -215,37 +215,37 @@ initLearningPatterns (neuron *** X, neuron *** Y, char *filename)
 void
 getLearningPatterns (neuron ** X, neuron ** Y, char *filename)
 {
-	int iSize;
-	int p;
-	int j;
-	char buffer[MAXSIZE];
-	char aux1[MAXSIZE];
+    int iSize;
+    int p;
+    int j;
+    char buffer[MAXSIZE];
+    char aux1[MAXSIZE];
 
 
-	getValue (buffer, "pattern.size", filename);
-	iSize = atoi (buffer);
+    getValue (buffer, "pattern.size", filename);
+    iSize = atoi (buffer);
 
-	for (p = 0; p < iSize; p++)
-	{
-		for (j = 0; j < Di[0] - 1; j++)
-		{
-			sprintf (aux1, "pattern.in.%d.%d", p, j);
-			getValue (buffer, aux1, filename);
-			// TODO: Verificar los tipos de datos segun el problema a resolver
-			//X[p][j]=atoi(buffer);
-			X[p][j] = (neuron) atof (buffer);
-		}
+    for (p = 0; p < iSize; p++)
+    {
+        for (j = 0; j < Di[0] - 1; j++)
+        {
+            sprintf (aux1, "pattern.in.%d.%d", p, j);
+            getValue (buffer, aux1, filename);
+            // TODO: Verificar los tipos de datos segun el problema a resolver
+            //X[p][j]=atoi(buffer);
+            X[p][j] = (neuron) atof (buffer);
+        }
 
-		for (j = 0; j < Di[D]; j++)
-		{
-			sprintf (aux1, "pattern.out.%d.%d", p, j);
-			getValue (buffer, aux1, filename);
-			// TODO: Verificar los tipos de datos segun el problema a resolver.
-			//Y[p][j]=atoi(buffer);
-			Y[p][j] = (neuron) atof (buffer);
-		}
+        for (j = 0; j < Di[D]; j++)
+        {
+            sprintf (aux1, "pattern.out.%d.%d", p, j);
+            getValue (buffer, aux1, filename);
+            // TODO: Verificar los tipos de datos segun el problema a resolver.
+            //Y[p][j]=atoi(buffer);
+            Y[p][j] = (neuron) atof (buffer);
+        }
 
-	}
+    }
 }
 
 /**
@@ -258,24 +258,24 @@ getLearningPatterns (neuron ** X, neuron ** Y, char *filename)
 int
 config (char *filename)
 {
-	char buffer[MAXSIZE];
-	char aux1[MAXSIZE];
-	int k;
+    char buffer[MAXSIZE];
+    char aux1[MAXSIZE];
+    int k;
 
-	getValue (buffer, "layer.size", filename);
-	D = atoi (buffer);
+    getValue (buffer, "layer.size", filename);
+    D = atoi (buffer);
 
-	getValue (buffer, "reply.factor", filename);
-	REPLY_FACTOR = atol (buffer);
+    getValue (buffer, "reply.factor", filename);
+    REPLY_FACTOR = atol (buffer);
 
-	getValue (buffer, "accuracy", filename);
+    getValue (buffer, "accuracy", filename);
     ACCURACY = atof (buffer);
 
-	getValue (buffer, "delta.li", filename);
-	LI_E = atof (buffer);
+    getValue (buffer, "delta.li", filename);
+    LI_E = atof (buffer);
 
-	getValue (buffer, "delta.weight", filename);
-	DELTA_WEIGHT = atof (buffer);
+    getValue (buffer, "delta.weight", filename);
+    DELTA_WEIGHT = atof (buffer);
 
     timeseed = 0;
     getValue (buffer, "timeseed", filename);
@@ -292,28 +292,28 @@ config (char *filename)
     if (strlen(buffer)>1)
         RMS_BREAK = atof(buffer);
 
-	// +1 por las entradas
-	Di = (int *) malloc (sizeof (int) * (D + 1));
+    // +1 por las entradas
+    Di = (int *) malloc (sizeof (int) * (D + 1));
 
-	if (Di == NULL)
-	{
-		printf ("No hay suficiente memoria.\n");
-		exit (-1);
-	}
+    if (Di == NULL)
+    {
+        printf ("No hay suficiente memoria.\n");
+        exit (-1);
+    }
 
-	for (k = 0; k < D + 1; k++)
-	{
-		sprintf (aux1, "layer.%d", k);
-		getValue (buffer, aux1, filename);
-		Di[k] = atoi (buffer);
-		// +1 por el bias.
-		if (k == 0)
-			Di[k]++;
-	}
+    for (k = 0; k < D + 1; k++)
+    {
+        sprintf (aux1, "layer.%d", k);
+        getValue (buffer, aux1, filename);
+        Di[k] = atoi (buffer);
+        // +1 por el bias.
+        if (k == 0)
+            Di[k]++;
+    }
 
-	// TODO: Asserts for null pointers
-	// TODO: Check if there is a misconfiguration file.
-	return 1;
+    // TODO: Asserts for null pointers
+    // TODO: Check if there is a misconfiguration file.
+    return 1;
 }
 
 /**
@@ -326,20 +326,20 @@ config (char *filename)
 void
 getRandomWeight (weight ** W)
 {
-	int i, j, k;
+    int i, j, k;
 
-	for (k = 0; k < D; k++)
-	{
-		for (i = 0; i < Di[k]; i++)
-		{
-			for (j = 0; j < Di[k + 1]; j++)
-			{
+    for (k = 0; k < D; k++)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            for (j = 0; j < Di[k + 1]; j++)
+            {
                 *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * 0.1;
-			}
-		}
-	}
+            }
+        }
+    }
 
-	return;
+    return;
 }
 
 /*
@@ -354,17 +354,17 @@ getRandomWeight (weight ** W)
 neuron
 evolve (neuron * X, weight * W, int i, int jMax)
 {
-	weight aux = 0;
-	int j = 0;
+    weight aux = 0;
+    int j = 0;
 
-	for (j = 0; j < jMax; j++)
-	{
-		aux += ((*(W + jMax * i + j)) * X[j]);
-	}
+    for (j = 0; j < jMax; j++)
+    {
+        aux += ((*(W + jMax * i + j)) * X[j]);
+    }
 
-	// TODO: Generalize this
+    // TODO: Generalize this
     //return sgn(aux);
-	//return expsigmoid(aux);
+    //return expsigmoid(aux);
     return tanhsigmoid (aux);
 }
 
@@ -380,20 +380,20 @@ evolve (neuron * X, weight * W, int i, int jMax)
 neuron *
 evolveLayeredNN (weight ** W, neuron ** E)
 {
-	int k;			// Indice de layer
-	int i;			// Indice de neurona en cada layer
+    int k;			// Indice de layer
+    int i;			// Indice de neurona en cada layer
 
-	// El primer layer tiene las entradas, asi que empezamos del segundo
-	// para procesar hacia delante.
-	for (k = 0 + 1; k < D + 1; k++)
-	{
-		for (i = 0; i < Di[k]; i++)
-		{
-			E[k][i] = evolve (E[k - 1], W[k - 1], i, Di[k - 1]);
-		}
-	}
+    // El primer layer tiene las entradas, asi que empezamos del segundo
+    // para procesar hacia delante.
+    for (k = 0 + 1; k < D + 1; k++)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            E[k][i] = evolve (E[k - 1], W[k - 1], i, Di[k - 1]);
+        }
+    }
 
-	return E[D];
+    return E[D];
 }
 
 
@@ -409,42 +409,42 @@ evolveLayeredNN (weight ** W, neuron ** E)
  * Y              Valores de salida deseados.
  *
  **/
-	int
+int
 getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
 {
-	int i, j, k;
-	neuron aux = 0;
+    int i, j, k;
+    neuron aux = 0;
 
-	for (k = D; k > 0; k--)
-	{
-		if (k == D)
-		{
-			// Para el ultimo layer
-			for (i = 0; i < Di[k]; i++)
-			{
-				Li[(k - 1)][i] =
-					LI_E * (1 -
-						E[k][i] * E[k][i]) * (Y[i] -
-								      E[k]
-								      [i]);
-			}
-		}
-		else
-		{
-			// Para el k-layer
-			for (i = 0; i < Di[k]; i++)
-			{
-				for (j = 0; j < Di[k + 1]; j++)
-				{
-					aux += (Li[(k - 1) + 1][j] *
-						(*(W[k] + Di[k] * i + j)));
-				}
-				Li[(k - 1)][i] =
-					LI_E * (1 - E[k][i] * E[k][i]) * aux;
-			}
-		}
-	}
-	return 1;
+    for (k = D; k > 0; k--)
+    {
+        if (k == D)
+        {
+            // Para el ultimo layer
+            for (i = 0; i < Di[k]; i++)
+            {
+                Li[(k - 1)][i] =
+                        LI_E * (1 -
+                                E[k][i] * E[k][i]) * (Y[i] -
+                                                      E[k]
+                                                      [i]);
+            }
+        }
+        else
+        {
+            // Para el k-layer
+            for (i = 0; i < Di[k]; i++)
+            {
+                for (j = 0; j < Di[k + 1]; j++)
+                {
+                    aux += (Li[(k - 1) + 1][j] *
+                            (*(W[k] + Di[k] * i + j)));
+                }
+                Li[(k - 1)][i] =
+                        LI_E * (1 - E[k][i] * E[k][i]) * aux;
+            }
+        }
+    }
+    return 1;
 }
 
 
@@ -456,45 +456,45 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
  * Y                 Valores de salida finales deseados
  *
  **/
-	int
+int
 learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
 {
-	weight dW;
-	neuron **Li;
-	int k, j, i;
-	int bLearn = 0;
+    weight dW;
+    neuron **Li;
+    int k, j, i;
+    int bLearn = 0;
 
-	// Estructura para contener los valores de retropropagacion del error
-	Li = (neuron **) malloc (sizeof (neuron *) * (D));
+    // Estructura para contener los valores de retropropagacion del error
+    Li = (neuron **) malloc (sizeof (neuron *) * (D));
 
-	for (k = D; k > 0; k--)
-	{
-		*(Li + (k - 1)) = (neuron *) malloc (sizeof (neuron) * Di[k]);
+    for (k = D; k > 0; k--)
+    {
+        *(Li + (k - 1)) = (neuron *) malloc (sizeof (neuron) * Di[k]);
 
         memset(*(Li + (k - 1)),0,sizeof (neuron) * Di[k]);
-	}
+    }
 
-	// Evoluciona la red
-	evolveLayeredNN (W, E);
+    // Evoluciona la red
+    evolveLayeredNN (W, E);
 
-	// Obtiene las retropropagaciones de los errores
-	getLi (Li, W, E, Y);
+    // Obtiene las retropropagaciones de los errores
+    getLi (Li, W, E, Y);
 
-	// Aplica la delta rule sobre todos los pesos sinapticos de toda la red
-	for (k = D; k > 0; k--)
-	{
-		for (i = 0; i < Di[k]; i++)
-		{
-			for (j = 0; j < Di[k - 1]; j++)
-			{
+    // Aplica la delta rule sobre todos los pesos sinapticos de toda la red
+    for (k = D; k > 0; k--)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            for (j = 0; j < Di[k - 1]; j++)
+            {
                 // @TODO: we are missing the momentum value
-				dW = (weight) ((DELTA_WEIGHT) *
-					       Li[(k) - 1][i] * E[k - 1][j]);
+                dW = (weight) ((DELTA_WEIGHT) *
+                               Li[(k) - 1][i] * E[k - 1][j]);
 
                 // Incrementando ACCURACY haces que la red sea mas laxa en la condicion de terminacion.
                 if (fabs (dW) > 0.001)
                 {
-					bLearn = 1;
+                    bLearn = 1;
                     // Si bLearn true, entonces la red sigue intentando aprender.
                     // @FIXME El valor suele ser muy chico si la dimension es mayor a 1
                 }
@@ -505,18 +505,18 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
                 *(DW[k - 1] + Di[k - 1] * i + j) = (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
 
             }
-		}
-	}
+        }
+    }
 
-	// Libera el espacio utilizado para almacenar los valores de errores.
-	for (k = D; k > 0; k--)
-	{
-		free (*(Li + (k - 1)));
-	}
+    // Libera el espacio utilizado para almacenar los valores de errores.
+    for (k = D; k > 0; k--)
+    {
+        free (*(Li + (k - 1)));
+    }
 
-	free (Li);
+    free (Li);
 
-	return bLearn;
+    return bLearn;
 }
 
 /**
@@ -534,41 +534,41 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
  **/
 float
 getQuadraticError (float **W, float **E, float **X, float **Y,
-		   int patternSize)
+                   int patternSize)
 {
-	int p, j;
-	float fQErr=0;
+    int p, j;
+    float fQErr=0;
 
-	for (p = 0; p < patternSize; p++)
-	{
-		E[0][0] = -1;
-		for (j = 1; j < Di[0]; j++)
-		{
-			E[0][j] = X[p][j - 1];
-		}
-		evolveLayeredNN (W, E);
+    for (p = 0; p < patternSize; p++)
+    {
+        E[0][0] = -1;
+        for (j = 1; j < Di[0]; j++)
+        {
+            E[0][j] = X[p][j - 1];
+        }
+        evolveLayeredNN (W, E);
         for (j=0;j<Di[D];j++)
         {
             fQErr += (pow((Y[p][j] - E[D][j]),2));
         }
-		
-	}
 
-	fQErr = fQErr / (float) patternSize;
-	return fQErr;
+    }
+
+    fQErr = fQErr / (float) patternSize;
+    return fQErr;
 }
 
 float
 logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
-		   int patternSize)
+                   int patternSize)
 {
     float rms=getQuadraticError (W, E, X, Y, patternSize);
-	if (isLogging ())
-	{
-		sprintf (logBuffer, "%12.10f\n",
-             rms);
-		logInfo (logBuffer);
-	}
+    if (isLogging ())
+    {
+        sprintf (logBuffer, "%12.10f\n",
+                 rms);
+        logInfo (logBuffer);
+    }
     return rms;
 }
 
@@ -592,91 +592,91 @@ logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
 void
 learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 {
-	int bLearn = 0;
-	int iChance;
-	int j;
+    int bLearn = 0;
+    int iChance;
+    int j;
     unsigned long iMUpdate = 0;
-	int *bLearnVector;
+    int *bLearnVector;
     float rms=1;
     weight **DW = NULL;
 
-	bLearnVector = (int *) malloc (sizeof (int) * patternSize);
+    bLearnVector = (int *) malloc (sizeof (int) * patternSize);
 
     // @FIXME memset
-	for (j = 0; j < patternSize; j++)
-		bLearnVector[j] = 0;
+    for (j = 0; j < patternSize; j++)
+        bLearnVector[j] = 0;
 
-	// Log info
-	sprintf (logBuffer,
-		 "Error cuadratico medio cada %d actualizaciones.\n",
-		 patternSize);
-	logInfo (logBuffer);
+    // Log info
+    sprintf (logBuffer,
+             "Error cuadratico medio cada %d actualizaciones.\n",
+             patternSize);
+    logInfo (logBuffer);
 
     initDW(&DW);
 
     while (bLearn < REPLY_FACTOR && (forceBreak == 0))
-	{
-		iMUpdate++;
-		iChance = getProb (0, patternSize);
-		E[0][0] = -1;
-		for (j = 1; j < Di[0]; j++)
-		{
-			E[0][j] = X[iChance][j - 1];
-		}
+    {
+        iMUpdate++;
+        iChance = getProb (0, patternSize);
+        E[0][0] = -1;
+        for (j = 1; j < Di[0]; j++)
+        {
+            E[0][j] = X[iChance][j - 1];
+        }
 
         // Ajustar los pesos hasta que x REPLY_FACTOR repeticiones no se perciban cambios.
         if (learn_backprop (W, E, DW, Y[iChance]) == 0)
-		{
-			bLearn++;
-			bLearnVector[iChance]++;
-		}
-		// Log info solo si la salida es unidimensional
-		if ((iMUpdate % patternSize) == 0)
-		{
+        {
+            bLearn++;
+            bLearnVector[iChance]++;
+        }
+        // Log info solo si la salida es unidimensional
+        if ((iMUpdate % patternSize) == 0)
+        {
             rms = logQuadraticError (W, E, X, Y, patternSize);
             if (rms < RMS_BREAK)
                 break;
 
             //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
             //    break;
-		}
+        }
 
         if (iMUpdate % 100000 == 0)
         {
             printf("%ld:%d\n", iMUpdate, bLearn);
         }
-	}
+    }
 
     printf("Steps: %ld\n", iMUpdate);
 
     freeDW (&DW);
-	free (bLearnVector);
-	return;
+    free (bLearnVector);
+    return;
 }
 
 
 // JUSTFORTEST
 // Hardcoded para una sola layer (no backpropagation algorithm)
-	int
+int
 learn (weight ** W, neuron ** E, neuron * Y)
 {
-	weight dW;
-	int j = 0;
-	int bLearn = 0;
+    weight dW;
+    int j = 0;
+    int bLearn = 0;
 
-	evolveLayeredNN (W, E);
+    evolveLayeredNN (W, E);
 
-	for (j = 0; j < Di[0]; j++)
-	{
-		dW = (weight) (0.0001 * E[0][j] * (Y[0] - E[1][0]));
+    for (j = 0; j < Di[0]; j++)
+    {
+        dW = (weight) (0.0001 * E[0][j] * (Y[0] - E[1][0]));
 
         if (fabs (dW) > ACCURACY)
-			bLearn = 1;
+            bLearn = 1;
 
-		*(W[0] + Di[0] * 0 + j) += dW;
-	}
+        *(W[0] + Di[0] * 0 + j) += dW;
+    }
 
-	return bLearn;
+    return bLearn;
 }
 
 
@@ -685,7 +685,7 @@ learn (weight ** W, neuron ** E, neuron * Y)
  */
 neuron fx (neuron x, neuron y, neuron z)
 {
-	return ((sin (x * M_PI + M_PI) + cos (y * M_PI + M_PI) + z) / 3);
+    return ((sin (x * M_PI + M_PI) + cos (y * M_PI + M_PI) + z) / 3);
 }
 
 
@@ -694,41 +694,41 @@ neuron fx (neuron x, neuron y, neuron z)
  * de configuracion con los patrones a aprender
  *
  **/
-	void
+void
 generateTrainningSet ()
 {
-	neuron x[5];
-	neuron y[5];
-	neuron z[5];
-	neuron fx;
-	int i, j, k;
+    neuron x[5];
+    neuron y[5];
+    neuron z[5];
+    neuron fx;
+    int i, j, k;
 
-	for (i = 0; i < 5; i++)
-	{
-		x[i] = getNaturalMinMaxProb (0, 2 * M_PI);
-		y[i] = getNaturalMinMaxProb (0, 2 * M_PI);
-		z[i] = getNaturalMinMaxProb (-1, 1);
-	}
+    for (i = 0; i < 5; i++)
+    {
+        x[i] = getNaturalMinMaxProb (0, 2 * M_PI);
+        y[i] = getNaturalMinMaxProb (0, 2 * M_PI);
+        z[i] = getNaturalMinMaxProb (-1, 1);
+    }
 
-	printf ("pattern.size=125\n\n");
-	for (i = 0; i < 5; i++)
-	{
-		for (j = 0; j < 5; j++)
-		{
-			for (k = 0; k < 5; k++)
-			{
-				fx = sin (x[i]) + cos (y[j]) + z[k];
-				printf ("pattern.in.%d.0=%12.10f\n",
-					i * 25 + j * 5 + k,
-					(x[i] - M_PI) / (M_PI));
-				printf ("pattern.in.%d.1=%12.10f\n",
-					i * 25 + j * 5 + k,
-					(y[j] - M_PI) / (M_PI));
-				printf ("pattern.in.%d.2=%12.10f\n",
-					i * 25 + j * 5 + k, z[k]);
-				printf ("pattern.out.%d.0=%12.10f\n\n",
-					i * 25 + j * 5 + k, fx / 3);
-			}
-		}
-	}
+    printf ("pattern.size=125\n\n");
+    for (i = 0; i < 5; i++)
+    {
+        for (j = 0; j < 5; j++)
+        {
+            for (k = 0; k < 5; k++)
+            {
+                fx = sin (x[i]) + cos (y[j]) + z[k];
+                printf ("pattern.in.%d.0=%12.10f\n",
+                        i * 25 + j * 5 + k,
+                        (x[i] - M_PI) / (M_PI));
+                printf ("pattern.in.%d.1=%12.10f\n",
+                        i * 25 + j * 5 + k,
+                        (y[j] - M_PI) / (M_PI));
+                printf ("pattern.in.%d.2=%12.10f\n",
+                        i * 25 + j * 5 + k, z[k]);
+                printf ("pattern.out.%d.0=%12.10f\n\n",
+                        i * 25 + j * 5 + k, fx / 3);
+            }
+        }
+    }
 }
