@@ -1,6 +1,6 @@
 layer.size=2
 layer.0=35
-layer.1=10
+layer.1=30
 layer.2=35
 log.filename=autoencoder.log
 log.input=input.dat
