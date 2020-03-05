@@ -260,7 +260,7 @@ main (int argc, char *argv[])
 
 	printf ("Simulacion Red Hopfield 82 (v1.0).\n");
 
-	initRandom ();
+    initRandom (0);
 
 	getParameter (&N, &P, &LC, &N_MIN, &N_MAX, &N_INTERVAL);
 
@@ -280,7 +280,8 @@ main (int argc, char *argv[])
 		printf ("ERROR:  No es posible abir archivo de log.\n");
 		exit (-1);
 	}
-	iOpcion = atoi (argv[1]);
+	
+iOpcion = atoi (argv[1]);
 	switch (iOpcion)
 	{
 	case 5:

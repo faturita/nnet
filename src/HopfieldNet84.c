@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
     printf ("Simulacion Red Hopfield 84 (v1.0) - 2003.\n");
 
-    initRandom();
+    initRandom(0);
 
     getParameter(&N,&P,&N_MIN,&N_MAX,&N_INTERVAL,&LC);
 
