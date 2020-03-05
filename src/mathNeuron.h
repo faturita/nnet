@@ -48,4 +48,4 @@ float expsigmoid(float fVal);
 /**
  * Inicializa la semilla de los numeros pseudoaleatorios con la hora actual.
  **/
-void initRandom();
+unsigned int initRandom(unsigned int timeseed);

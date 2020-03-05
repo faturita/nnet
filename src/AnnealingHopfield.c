@@ -151,7 +151,7 @@ void AnnealingHopfield(weight *W, int *EE, int MIN_DE)
 {
 	float T=100;			// Temperatura del modelo.
 	
-	initRandom();
+    initRandom(0);
 	
 	float Et0,Et1,DE,LREt0=0;
 	int i,j;
@@ -293,7 +293,7 @@ int main(int argc, char*argv[]) {
 	
 	printf ("Simulacion Red Hopfield 82 utilizando Simulated Annealing (v1.0).\n");
 
-	initRandom ();
+    initRandom (0);
 
 	getParameterWithFileName ("annealing.parameter.conf", &N, &P, &LC, &N_MIN, &N_MAX, &N_INTERVAL);
 	

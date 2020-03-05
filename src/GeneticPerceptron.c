@@ -227,7 +227,7 @@ main (int argc, char *argv[])
 	weight *I, *In;
 	
 
-	initRandom ();
+    initRandom (0);
 	
 	
 	I = (weight *)malloc(sizeof(weight)*M);

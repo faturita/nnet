@@ -59,9 +59,21 @@ float expsigmoid(float fVal) {
 /*
  * Inicializa las funciones de numeros al azar.
  */
-void initRandom()
+unsigned int initRandom(unsigned int timeseed)
 {
     time_t tim;
     time(&tim);
-    srand((unsigned int)(tim));
+
+    if (timeseed != 0)
+    {
+        srand(timeseed);
+        return timeseed;
+    }
+    else
+    {
+        srand((unsigned int)(tim));
+        return (unsigned int)(tim);
+    }
+
+    return (unsigned int)(tim);
 }

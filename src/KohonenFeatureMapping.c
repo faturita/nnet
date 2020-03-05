@@ -43,7 +43,7 @@ generateTrainningSet (int patternSize)
 int
 main_Generate (int argc, char *argv[])
 {
-	initRandom ();
+    initRandom (0);
 	config ("kohonen.conf");
 
 	generateTrainningSet (atoi (argv[1]));
@@ -63,7 +63,7 @@ main (int argc, char *argv[])
 	int i, j,iChance;
 	int winner;
 
-	initRandom ();
+    initRandom (0);
 
 	config ("kohonen.conf");
 

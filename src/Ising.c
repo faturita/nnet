@@ -228,7 +228,7 @@ float SimulateIsing()
     float Pi,r;					// Probabilidades
 
 	// Inicializar el algoritmo de generacion de numeros pseudoaleatorios.
-    initRandom();
+    initRandom(0);
 
     N = 100;//En 2D es N*N
 

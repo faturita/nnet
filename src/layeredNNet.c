@@ -44,12 +44,17 @@ float LI_E;
 // Factor de variacion de los pesos sinapticos.
 float DELTA_WEIGHT;
 
+// Parametro del momentum
+float MOMENTUM;
+
 // Cantidad de layers para el perceptron (camino maximo del grafo)
 int D;
 
 // Array con la cantidad de neuronas en cada layer. Dim(Di) = D+1
 // Para Di[0]=Di[0] real + 1 (bias con entrada fija -1)
 int *Di;
+
+unsigned int timeseed;
 
 /**
  * init
@@ -103,6 +108,48 @@ init (weight *** W, neuron *** E)
 	}
 
 }
+
+
+void initDW(weight ***DW)
+{
+    // D la cantidad de capas con neuronas (sin contar la entrada).
+    *DW = (weight **) malloc (sizeof (weight *) * D);
+
+    if (*DW == NULL)
+    {
+        printf ("No hay suficiente memoria.\n");
+        exit (-1);
+    }
+
+
+    // Inicializacion matriz con los pesos sinapticos para todas las capas.
+    for (int i = 0; i < D; i++)
+    {
+        (*DW)[i] =
+            (weight *) malloc (sizeof (weight) *
+                       (Di[i] * Di[i + 1]));
+        if ((*DW)[i] == NULL)
+        {
+            printf ("No hay suficiente memoria.\n");
+            exit (-1);
+        }
+
+        memset((*DW)[i], 0, sizeof (weight)*(Di[i] * Di[i + 1]));
+    }
+}
+
+void freeDW(weight ***DW)
+{
+    // Inicializacion matriz con los pesos sinapticos para todas las capas.
+    for (int i = 0; i < D; i++)
+    {
+        //free((*DW)[i]);
+    }
+
+    //free( DW );
+}
+
+
 
 /**
  * Inicializa las estructuras para contener a los patrones para
@@ -225,6 +272,16 @@ config (char *filename)
 	getValue (buffer, "delta.weight", filename);
 	DELTA_WEIGHT = atof (buffer);
 
+    timeseed = 0;
+    getValue (buffer, "timeseed", filename);
+    if (strlen(buffer)>1)
+        timeseed = atoi(buffer);
+
+    MOMENTUM = 0;
+    getValue(buffer, "momentum", filename);
+    if (strlen(buffer)>1)
+        MOMENTUM = atof(buffer);
+
 	// +1 por las entradas
 	Di = (int *) malloc (sizeof (int) * (D + 1));
 
@@ -267,8 +324,7 @@ getRandomWeight (weight ** W)
 		{
 			for (j = 0; j < Di[k + 1]; j++)
 			{
-				*(W[k] + Di[k + 1] * i + j) =
-					getNaturalMinMaxProb (-1, 1);
+                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * 0.1;
 			}
 		}
 	}
@@ -391,7 +447,7 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
  *
  **/
 	int
-learn_backprop (weight ** W, neuron ** E, neuron * Y)
+learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
 {
 	weight dW;
 	neuron **Li;
@@ -432,8 +488,12 @@ learn_backprop (weight ** W, neuron ** E, neuron * Y)
                     // Si bLearn true, entonces la red sigue intentando aprender.
                 }
 
-				*(W[k - 1] + Di[k - 1] * i + j) += dW;
-			}
+                //*(W[k - 1] + Di[k - 1] * i + j) += dW;
+
+                *(W[k - 1] + Di[k - 1] * i + j) += (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
+                *(DW[k - 1] + Di[k - 1] * i + j) = (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
+
+            }
 		}
 	}
 
@@ -476,7 +536,10 @@ getQuadraticError (float **W, float **E, float **X, float **Y,
 			E[0][j] = X[p][j - 1];
 		}
 		evolveLayeredNN (W, E);
-		fQErr += (pow((Y[p][0] - E[D][0]),2));
+        for (j=0;j<Di[D];j++)
+        {
+            fQErr += (pow((Y[p][j] - E[D][j]),2));
+        }
 		
 	}
 
@@ -521,9 +584,10 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 	int bLearn = 0;
 	int iChance;
 	int j;
-	int iMUpdate = 0;
+    unsigned long iMUpdate = 0;
 	int *bLearnVector;
     float rms=1;
+    weight **DW = NULL;
 
 	bLearnVector = (int *) malloc (sizeof (int) * patternSize);
 
@@ -537,6 +601,8 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 		 patternSize);
 	logInfo (logBuffer);
 
+    initDW(&DW);
+
 	while (bLearn < REPLY_FACTOR)
 	{
 		iMUpdate++;
@@ -548,7 +614,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 		}
 
         // Ajustar los pesos hasta que x REPLY_FACTOR repeticiones no se perciban cambios.
-		if (learn_backprop (W, E, Y[iChance]) == 0)
+        if (learn_backprop (W, E, DW, Y[iChance]) == 0)
 		{
 			bLearn++;
 			bLearnVector[iChance]++;
@@ -557,11 +623,20 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 		if ((iMUpdate % patternSize) == 0)
 		{
             rms = logQuadraticError (W, E, X, Y, patternSize);
-            if (rms < 0.0005) // @TODO add me as a parameter
+            if (rms < 0.01)
                 break;
+
+            //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
+            //    break;
 		}
+
+        if (iMUpdate % 10000 == 0)
+        {
+            printf("%ld:%d\n", iMUpdate, bLearn);
+        }
 	}
 
+    freeDW (&DW);
 	free (bLearnVector);
 	return;
 }

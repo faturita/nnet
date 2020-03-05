@@ -33,7 +33,7 @@ main (int argc, char *argv[])
 	int bShowOutputFx = 0;	// Marca para mostrar el valor de la funcion en la salida.
 
 	// Inicializacion de la generacion de numeros pseudoaleatorios
-	initRandom ();
+    initRandom (0);
 
 	printf ("Backpropagation\n");
 
