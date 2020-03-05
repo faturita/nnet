@@ -334,7 +334,7 @@ getRandomWeight (weight ** W)
         {
             for (j = 0; j < Di[k + 1]; j++)
             {
-                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * 0.1;
+                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (1.0/sqrtf(Di[k+1]));
             }
         }
     }
