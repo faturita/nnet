@@ -49,6 +49,20 @@ float tanhsigmoid(float fVal) {
 	return ( (exp( fVal ) - exp ( -fVal ))/(exp(fVal) + exp(-fVal)));
 }
 
+#include "assert.h"
+
+/**
+ * @brief thetanhsigmoid LeCun, "Efficient Backprop", 1998  Ideal cuando las salidas son binarias, ya que el maximo de la derivada esta en -1 y +1
+ * @param fVal
+ * @return
+ */
+float thetanhsigmoid(float fVal) {
+    printf ("%f\n", fVal);
+    float val = (1.7159*tanhsigmoid(2.0/3.0 * fVal));
+    assert(!isnan(val) && "Error");
+    return val;
+}
+
 /**
  * Devuelve el valor de la exponencial
  */

@@ -383,7 +383,8 @@ evolve (neuron * X, weight * W, int i, int jMax)
     // TODO: Generalize this
     //return sgn(aux);
     //return expsigmoid(aux);
-    return tanhsigmoid (aux);
+    //return tanhsigmoid (aux);
+    return thetanhsigmoid(aux);
 }
 
 
@@ -441,10 +442,7 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
             for (i = 0; i < Di[k]; i++)
             {
                 Li[(k - 1)][i] =
-                        LI_E * (1 -
-                                E[k][i] * E[k][i]) * (Y[i] -
-                                                      E[k]
-                                                      [i]);
+                        (2.0/3.0) * (1.7159) * (1 - (4.0/9.0)*E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
             }
         }
         else
@@ -458,7 +456,7 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
                             (*(W[k] + Di[k] * i + j)));
                 }
                 Li[(k - 1)][i] =
-                        LI_E * (1 - E[k][i] * E[k][i]) * aux;
+                        (2.0/3.0) * (1.7159) * (1 - (4.0/9.0)* E[k][i] * E[k][i]) * aux;
             }
         }
     }

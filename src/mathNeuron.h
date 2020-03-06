@@ -40,6 +40,8 @@ int sgn(float fVal);
  **/
 float tanhsigmoid(float fVal);
 
+float thetanhsigmoid(float fVal);
+
 /**
  * Funcion exponencial
  **/
