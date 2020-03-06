@@ -1,12 +1,12 @@
 layer.size=2
 layer.0=35
-layer.1=30
+layer.1=2
 layer.2=35
 log.filename=autoencoder.log
 log.input=input.dat
 log.output=output.dat
 pattern.filename=autoencoder.pattern.conf.image
-reply.factor=4000000
+reply.factor=8000000
 accuracy=0.4
 delta.li=0.05
 delta.weight=0.01
