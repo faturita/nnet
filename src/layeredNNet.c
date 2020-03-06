@@ -334,7 +334,25 @@ getRandomWeight (weight ** W)
         {
             for (j = 0; j < Di[k + 1]; j++)
             {
-                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (1.0/sqrtf(Di[k+1]));
+                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (1.0/sqrtf(Di[k]));
+            }
+        }
+    }
+
+    return;
+}
+
+void addWeightNoise( weight ** W,float minValue, float maxValue)
+{
+    int i, j, k;
+
+    for (k = 0; k < D; k++)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            for (j = 0; j < Di[k + 1]; j++)
+            {
+                *(W[k] + Di[k + 1] * i + j) +=  getNaturalMinMaxProb (minValue, maxValue);
             }
         }
     }
@@ -644,6 +662,12 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
         if (iMUpdate % 100000 == 0)
         {
             printf("%ld:%d\n", iMUpdate, bLearn);
+        }
+
+        if (iMUpdate % 1000000 == 0)
+        {
+            // Hago un poco de ruido.
+            addWeightNoise(W,-0.1,+0.1);
         }
     }
 
