@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "mathNeuron.h"
 
 /*
@@ -48,8 +49,6 @@ int sgn(float fVal)
 float tanhsigmoid(float fVal) {
 	return ( (exp( fVal ) - exp ( -fVal ))/(exp(fVal) + exp(-fVal)));
 }
-
-#include "assert.h"
 
 /**
  * @brief thetanhsigmoid LeCun, "Efficient Backprop", 1998  Ideal cuando las salidas son binarias, ya que el maximo de la derivada esta en -1 y +1

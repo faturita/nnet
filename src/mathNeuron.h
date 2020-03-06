@@ -7,6 +7,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+#include "assert.h"
 
 /**
  * Devuelve -1 o 1 .
