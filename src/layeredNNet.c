@@ -330,11 +330,24 @@ getRandomWeight (weight ** W)
 
     for (k = 0; k < D; k++)
     {
+        float fanin, fanout;
+
+        if (k == 0) {
+            fanin = 1;
+            fanout = Di[1];
+        } else if ( k == D-1)
+        {
+            fanin = Di[k-1];
+            fanout = 1;
+        } else {
+            fanin = Di[k-1];fanout=Di[k+1];
+        }
         for (i = 0; i < Di[k]; i++)
         {
             for (j = 0; j < Di[k + 1]; j++)
             {
-                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (1.0/sqrtf(Di[k]));
+                //*(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (1.0/sqrtf(Di[k]));
+                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (sqrt(6.0)/sqrtf(fanin+fanout));
             }
         }
     }
@@ -429,7 +442,7 @@ evolveLayeredNN (weight ** W, neuron ** E)
  *
  **/
 int
-getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
+getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y, neuron **Eta)
 {
     int i, j, k;
     neuron aux = 0;
@@ -441,8 +454,9 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
             // Para el ultimo layer
             for (i = 0; i < Di[k]; i++)
             {
+                if ((Eta[(k-1)][i])==0) (Eta[(k-1)][i]) = 0.01;
                 //Li[(k - 1)][i] =  (2.0/3.0) * (1.7159) * (1 - (4.0/9.0)*E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
-                Li[(k - 1)][i] =  (LI_E) * (1 - E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
+                Li[(k - 1)][i] =  (Eta[(k-1)][i]) * (1 - E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
             }
         }
         else
@@ -455,8 +469,9 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
                     aux += (Li[(k - 1) + 1][j] *
                             (*(W[k] + Di[k] * i + j)));
                 }
+                if ((Eta[(k-1)][i])==0) (Eta[(k-1)][i]) = LI_E;
                 //Li[(k - 1)][i] = (2.0/3.0) * (1.7159) * (1 - (4.0/9.0)* E[k][i] * E[k][i]) * aux;
-                Li[(k - 1)][i] = (LI_E) * (1 - E[k][i] * E[k][i]) * aux;
+                Li[(k - 1)][i] = (Eta[(k-1)][i]) * (1 - E[k][i] * E[k][i]) * aux;
             }
         }
     }
@@ -469,6 +484,7 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y)
  *
  * W                 Matriz de pesos sinapticos
  * E                 Valores de salida de todas las neuronas de todas las capas
+ * DW                Delta en los pesos sinápticos.
  * Y                 Valores de salida finales deseados
  *
  **/
@@ -476,7 +492,7 @@ int
 learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
 {
     weight dW;
-    neuron **Li;
+    neuron **Li, **Eta;
     int k, j, i;
     int bLearn = 0;
 
@@ -490,11 +506,20 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
         memset(*(Li + (k - 1)),0,sizeof (neuron) * Di[k]);
     }
 
+    Eta = (neuron **) malloc (sizeof (neuron *) * (D));
+
+    for (k = D; k > 0; k--)
+    {
+        *(Eta + (k - 1)) = (neuron *) malloc (sizeof (neuron) * Di[k]);
+
+        memset(*(Eta + (k - 1)),0,sizeof (neuron) * Di[k]);
+    }
+
     // Evoluciona la red
     evolveLayeredNN (W, E);
 
     // Obtiene las retropropagaciones de los errores
-    getLi (Li, W, E, Y);
+    getLi (Li, W, E, Y, Eta);
 
     // Aplica la delta rule sobre todos los pesos sinapticos de toda la red
     for (k = D; k > 0; k--)
@@ -528,9 +553,11 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
     for (k = D; k > 0; k--)
     {
         free (*(Li + (k - 1)));
+        free (*(Eta + (k - 1)));
     }
 
     free (Li);
+    free (Eta);
 
     return bLearn;
 }
