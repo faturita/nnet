@@ -12,7 +12,6 @@ primero voy a empezar por un approach local, despues si no funca uso el del libr
 
 Son 500 ciudades a resolver....
 
-
 Si tengo 500 ciudades, cada ciudad tiene 2 coordenadas...
 
 Tengo 499x499 posibles viajes entre ciudades....
@@ -151,9 +150,10 @@ generateTrainningSet (int patternSize)
 		{
 			for (j = 0; j < Di[0]; j++)
 			{
-				printf ("pattern.in.%d.%d=%12.10f\n", i, j,
-					item[j]);
+                //printf ("pattern.in.%d.%d=%12.10f\n", i, j,
+                    //item[j]);
 			}
+            printf ("%12.10f,%12.10f\n", item[0], item[1]);
 			i++;
 		}
 	}
@@ -166,7 +166,7 @@ int
 main_Generate (int argc, char *argv[])
 {
     initRandom (0);
-	config ("kohonentsp.conf");
+    config ("kohonentsp.conf");
 
 	generateTrainningSet (atoi (argv[1]));
 
@@ -185,9 +185,34 @@ main (int argc, char *argv[])
 	int i, j,iChance;
 	int winner;
 
-    initRandom (0);
+    unsigned int timeseed=0;
 
-	config ("kohonentsp.conf");
+    printf ("TSP Kohonen\n");
+    //signal(SIGINT, sigintHandler);
+
+    if (argc < 2)
+    {
+        printf ("\nSinopsis:\n");
+        printf ("%s    [archivo de configuracion inicial]\n",
+            argv[0]);
+        printf ("\n-f 	Genera archivo de configuracion con las inmagenes.\n");
+        exit (-1);
+    }
+
+    // Configuracion de la red
+    config ("kohonentsp.conf");
+
+    // Inicializacion de la generacion de numeros pseudoaleatorios
+    timeseed = initRandom (timeseed);
+
+    if ((argc >2 && strcmp (argv[2], "-f") == 0))
+    {
+        // Auxiliar: Ejecucion de la generacion de los patrones para aprender
+        // una funcion especifica.
+        generateTrainningSet (atoi (argv[3]));
+        exit (0);
+    }
+
 
 	init (&W, &E);
 	initLearningPatterns (&X, &Y, "kohonentsp.pattern.conf");
@@ -197,10 +222,10 @@ main (int argc, char *argv[])
 	getCircularWeight(W);
 
 	//getValue (buffer, "pattern.size", "kohonentsp.pattern.conf");
-	//patternSize = atoi (buffer);
+    patternSize = atoi (buffer);
 
 	// Aplica el algoritmo de aprendizaje a los patrones de entrada.
-	//learnPatterns2 (W, E, X, patternSize);
+    learnPatterns2 (W, E, X, patternSize);
 
 	// Imprime la matriz de resultado.
 	printf ("pattern.size=%d\n\n", Di[1]);
@@ -208,9 +233,12 @@ main (int argc, char *argv[])
 	{
 		for (j = 0; j < Di[0]; j++)
 		{
-			printf ("pattern.in.%d.%d=%12.10f\n", i, j,
-				*(W[0] + i * Di[0] + j));
+            //printf ("pattern.in.%d.%d=%12.10f\n", i, j,
+            //	*(W[0] + i * Di[0] + j));
+
+
 		}
+        printf("%12.10f,%12.10f\n", *(W[0] + i * Di[0] + 0),*(W[0] + i * Di[0] + 1));
 	}
 
 	return 1;

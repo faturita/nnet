@@ -316,6 +316,35 @@ config (char *filename)
     return 1;
 }
 
+int getFanIn(int k)
+{
+    int fanin = 0;
+    if (k == 0) {
+        fanin = 1;
+    } else if ( k == D-1)
+    {
+        fanin = Di[k-1];
+    } else {
+        fanin = Di[k-1];
+    }
+    return fanin;
+}
+
+int getFanOut(int k)
+{
+    int fanout = 0;
+    if (k == 0) {
+        fanout = Di[1];
+    } else if ( k == D-1)
+    {
+        fanout = 1;
+    } else {
+        fanout=Di[k+1];
+    }
+    return fanout;
+}
+
+
 /**
  * Genera la matriz con los pesos sinapticos al azar para todos los layers
  *
@@ -332,22 +361,17 @@ getRandomWeight (weight ** W)
     {
         float fanin, fanout;
 
-        if (k == 0) {
-            fanin = 1;
-            fanout = Di[1];
-        } else if ( k == D-1)
-        {
-            fanin = Di[k-1];
-            fanout = 1;
-        } else {
-            fanin = Di[k-1];fanout=Di[k+1];
-        }
+        fanin = getFanIn(k);
+        fanout = getFanOut(k);
+
         for (i = 0; i < Di[k]; i++)
         {
             for (j = 0; j < Di[k + 1]; j++)
             {
+                *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1);
                 //*(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (1.0/sqrtf(Di[k]));
                 *(W[k] + Di[k + 1] * i + j) =  getNaturalMinMaxProb (-1, 1) * (sqrt(6.0)/sqrtf(fanin+fanout));
+                //*(W[k] + Di[k + 1] * i + j) =  1;
             }
         }
     }
@@ -454,7 +478,7 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y, neuron **Eta)
             // Para el ultimo layer
             for (i = 0; i < Di[k]; i++)
             {
-                if ((Eta[(k-1)][i])==0) (Eta[(k-1)][i]) = 0.01;
+                if ((Eta[(k-1)][i])==0) (Eta[(k-1)][i]) = 1.0/getFanIn(k);
                 //Li[(k - 1)][i] =  (2.0/3.0) * (1.7159) * (1 - (4.0/9.0)*E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
                 Li[(k - 1)][i] =  (Eta[(k-1)][i]) * (1 - E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
             }
@@ -469,7 +493,7 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y, neuron **Eta)
                     aux += (Li[(k - 1) + 1][j] *
                             (*(W[k] + Di[k] * i + j)));
                 }
-                if ((Eta[(k-1)][i])==0) (Eta[(k-1)][i]) = LI_E;
+                if ((Eta[(k-1)][i])==0) (Eta[(k-1)][i]) = 1.0/getFanIn(k);
                 //Li[(k - 1)][i] = (2.0/3.0) * (1.7159) * (1 - (4.0/9.0)* E[k][i] * E[k][i]) * aux;
                 Li[(k - 1)][i] = (Eta[(k-1)][i]) * (1 - E[k][i] * E[k][i]) * aux;
             }

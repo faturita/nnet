@@ -1,51 +1,5 @@
 #include "parameter.h"
 
-/**
- * Obtiene un tag pero no cierra el archivo (para leer mucha info en secuencia)
- *
- **/
-void getQuickValue(char *buffer, char *searchKey, char *filename) {
-    static FILE *pf=NULL;
-    char vAux[MAXSIZE];
-    char elements[MAXSIZE];
-    char key[MAXSIZE];
-    int keylen;
-
-    // Inicializar valor con ""
-    strcpy(buffer,"");
-
-    if (pf == NULL)
-        pf = fopen(filename,"r");
-
-    if (pf == NULL) {
-        printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
-        return;
-    }
-
-
-    fgets(vAux, MAXSIZE, pf);
-    while ( !feof(pf) ) {
-        if (vAux[0] == '#' || strlen(vAux) < 3) {
-            fgets(vAux,MAXSIZE, pf);
-            continue;
-        }
-
-        strcpy(elements, (char *)strstr(vAux, "="));
-        keylen = strlen(vAux)-strlen(elements);
-        strncpy(key, vAux, keylen);
-        key[keylen]='\0';
-
-        if (strcmp(searchKey,key)==0) {
-            strcpy(buffer,elements+1);
-            // Elimino el enter.
-            buffer[strlen(elements+1)-1]='\0';
-            break;
-        }
-
-        fgets(vAux, MAXSIZE, pf);
-    }
-
-}
 
 /**
  * Devuelve un valor asociado a una clave en un archivo de configuracion
@@ -55,22 +9,14 @@ void getQuickValue(char *buffer, char *searchKey, char *filename) {
  * filename		Archivo de configuracion
  *
  **/
-void getValue(char *buffer, char *searchKey, char *filename) {
-    FILE *pf;
+void getTheValue(FILE *pf, char *buffer, char *searchKey, char *defaultValue) {
     char vAux[MAXSIZE];
     char elements[MAXSIZE];
     char key[MAXSIZE];
     int keylen;
 
-    // Inicializar valor con ""
-    strcpy(buffer,"");
-
-    pf = fopen(filename,"r");
-
-    if (pf == NULL) {
-        printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
-        exit(-1);
-    }
+    // Inicializar valor con el valor por default provisto
+    strncpy(buffer,defaultValue,strlen(defaultValue));
 
     fgets(vAux, MAXSIZE, pf);
     while ( !feof(pf) ) {
@@ -89,7 +35,7 @@ void getValue(char *buffer, char *searchKey, char *filename) {
 
             if (strcmp(searchKey,key)==0) {
                 strcpy(buffer,elements+1);
-                // Elimino el enter.
+                // Remove trailing CrLf
                 buffer[strlen(elements+1)-1]='\0';
                 break;
             }
@@ -97,9 +43,57 @@ void getValue(char *buffer, char *searchKey, char *filename) {
 
         fgets(vAux, MAXSIZE, pf);
     }
+}
+
+/**
+ * Devuelve un valor asociado a una clave en un archivo de configuracion
+ *
+ * buffer		Buffer de tamanio maximo MAXSIZE donde se almacena el valor
+ * searchKey	Clave a buscar
+ * filename		Archivo de configuracion
+ *
+ **/
+void getDefaultedValue(char *buffer, char *searchKey, char *filename, char *defaultValue)
+{
+    FILE *pf = NULL;
+
+
+    pf = fopen(filename,"r");
+
+    if (pf == NULL) {
+        printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
+        return;
+    }
+
+    getTheValue(pf, buffer, searchKey, defaultValue);
 
     fclose(pf);
 }
+
+void getValue(char *buffer, char *searchKey, char *filename)
+{
+    getDefaultedValue(buffer, searchKey, filename, "");
+}
+
+void getQuickValue(char *buffer, char *searchKey, char *filename, char *defaultValue)
+{
+    static FILE *pf = NULL;
+
+    if (pf == NULL)
+        pf = fopen(filename,"r");
+    else
+        fseek(pf,0,SEEK_SET);
+
+
+    if (pf == NULL) {
+        printf ("Archivo de configuracion (%s) no encontrado.\n",filename);
+        return;
+    }
+
+    getTheValue(pf, buffer, searchKey, defaultValue);
+
+}
+
 
 
 

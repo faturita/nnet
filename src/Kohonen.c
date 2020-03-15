@@ -171,7 +171,7 @@ getLearningPatterns (neuron ** X, neuron ** Y, char *filename)
 		for (j = 0; j < Di[0]; j++)
 		{
 			sprintf (aux1, "pattern.in.%d.%d", p, j);
-			getQuickValue (buffer, aux1, filename);
+            getQuickValue (buffer, aux1, filename,"0");
 			// TODO: Verificar los tipos de datos segun el problema a resolver
 			//X[p][j]=atoi(buffer);
 			X[p][j] = (neuron) atof (buffer);
@@ -223,6 +223,8 @@ config (char *filename)
 		// +1 por el bias.
 		//if (k==0) Di[k]++;
 	}
+
+    printf("Done\n");
 
 	// TODO: Asserts for null pointers
 	// TODO: Check if there is a misconfiguration file.
