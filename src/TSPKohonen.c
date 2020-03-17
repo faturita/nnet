@@ -23,7 +23,16 @@ A su vez tengo
 #include "Kohonen.c"
 #include "commandline.h"
 
+int forceBreak = 0;
 
+void sigintHandler(int sig_num)
+{
+    /* Reset handler to catch SIGINT next time.
+       Refer http://en.cppreference.com/w/c/program/signal */
+    signal(SIGINT, sigintHandler);
+    forceBreak = 1;
+    fflush(stdout);
+}
 
 /**
  * Genera la matriz con los pesos sinapticos al azar para todos los layers
@@ -68,7 +77,7 @@ learnPatterns2 (weight ** W, neuron ** E, neuron ** Y, int patternSize)
 	replyFactor = atoi (buffer);
 
 	//E[0][0]=-1;
-	while (replyCounter++ < replyFactor)
+    while (replyCounter++ < replyFactor && forceBreak==0)
 	{
 
 		// Seleccion de uno de los patrones al azar.
@@ -82,7 +91,7 @@ learnPatterns2 (weight ** W, neuron ** E, neuron ** Y, int patternSize)
 
 		// Se selecciona el ganador con "Similarity Matching"
 		winner = evolveSimilarityMatching (W, E);
-		//printf ("Winner: %d\n", winner);
+        //printf ("Winner: %d - %d\n", s,winner);
 		// update synaptic weights  Di[0] dimension del vector de entrada.
 
 		//printf ("La ganadora es %d,%d \n", XX(winner), YY(winner));
@@ -98,16 +107,21 @@ learnPatterns2 (weight ** W, neuron ** E, neuron ** Y, int patternSize)
 		// Winner Take all para los vecinos. (Hardcoded neuronas en 2 dimensiones).
 		for (s = 0; s < Di[1]; s++)
 		{
-			if ((s != winner) && ( (abs (s - winner) <= 10)
-			    || (abs (s + winner - Di[1]) <= 10) ) )
+            if ((s != winner) && ( (abs (s - winner) <= 10)
+                || (abs (s + winner - Di[1]) <= 10) ) )
 			{
 				//printf ("Actualizando %d,%d \n", XX(s), YY(s));
 				for (i = 0; i < Di[0]; i++)
 				{
-					*(W[0] + s * Di[0] + i) +=
-						((1.0 / (100.0 * abs(s - winner))) *
-						 (E[0][i] -
-						  *(W[0] + s * Di[0] + i)));
+                    *(W[0] + s * Di[0] + i) +=
+                        ((1.0 / (100.0 * abs(s - winner))) *
+                         (E[0][i] -
+                          *(W[0] + s * Di[0] + i)));
+
+//					*(W[0] + s * Di[0] + i) +=
+//                        0.01 *
+//						 (E[0][i] -
+//                          *(W[0] + s * Di[0] + i));
 				}
 			}
 
@@ -166,6 +180,8 @@ main_Generate (int argc, char *argv[])
 	return 1;
 }
 
+
+
 int
 main (int argc, char *argv[])
 {
@@ -181,7 +197,7 @@ main (int argc, char *argv[])
     unsigned int timeseed=0;
 
     printf ("TSP Kohonen\n");
-    //signal(SIGINT, sigintHandler);
+    signal(SIGINT, sigintHandler);
 
     if (argc < 2)
     {
@@ -215,7 +231,7 @@ main (int argc, char *argv[])
     //getRandomWeight (W);
     getCircularWeight(W);
 
-	//getValue (buffer, "pattern.size", "kohonentsp.pattern.conf");
+    getValue (buffer, "pattern.size", "kohonentsp.pattern.conf");
     patternSize = atoi (buffer);
 
     if (!isPresentCommandLineParameter(argc,argv,"-nolearn"))
