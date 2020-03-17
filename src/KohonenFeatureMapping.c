@@ -49,16 +49,6 @@ generateTrainningSet (int patternSize)
 	free (zero);
 }
 
-int
-main_Generate (int argc, char *argv[])
-{
-    initRandom (0);
-	config ("kohonen.conf");
-
-	generateTrainningSet (atoi (argv[1]));
-
-	return 1;
-}
 
 int
 main (int argc, char *argv[])
