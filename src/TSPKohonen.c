@@ -21,6 +21,7 @@ A su vez tengo
 **/
 
 #include "Kohonen.c"
+#include "commandline.h"
 
 
 
@@ -35,28 +36,20 @@ void
 getCircularWeight (weight ** W)
 {
 	int i, j, k;
-	
-	/**
-	for (k = 0; k < D; k++)
-	{
-		for (i = 0; i < Di[k]; i++)
-		{
-			*(W[k] + Di[k + 1] * i + 0) = 1;
-					//sin(i * ( (2.0*M_PI) / (float)Di[k] ) );
-			*(W[k] + Di[k + 1] * i + 1) = 1;
-					//cos(i * ( (2.0*M_PI) / (float)Di[k] ) );			
-		}
-	}
-	**/
-	
-	for (i = 0; i < Di[1]; i++)
-	{
-		for (j = 0; j < Di[0]; j++)
-		{
-			*(W[0] + i * Di[0] + j) =sin(i * ( (2.0*M_PI) / (float)Di[k] ) );
-		}
-	}
-	
+
+    for (i = 0; i < Di[1]; i++)
+    {
+        for (j = 0; j < Di[0]-1; j++)
+        {
+
+            *(W[0] + i * Di[0] + j) = 0.5 * sin( (float)i * 2.0 * M_PI / Di[1] );
+
+            *(W[0] + i * Di[0] + j + 1) = 0.5 * cos ( (float)i * 2.0 *  M_PI / Di[1]);
+
+
+        }
+        //printf("%12.10f,%12.10f\n", *(W[0] + i * Di[0] + 0),*(W[0] + i * Di[0] + 1));
+    }
 
 	return;
 }
@@ -200,7 +193,7 @@ main (int argc, char *argv[])
     }
 
     // Configuracion de la red
-    config ("kohonentsp.conf");
+    config (argv[1]);
 
     // Inicializacion de la generacion de numeros pseudoaleatorios
     timeseed = initRandom (timeseed);
@@ -218,14 +211,18 @@ main (int argc, char *argv[])
 	initLearningPatterns (&X, &Y, "kohonentsp.pattern.conf");
 	getLearningPatterns (X, Y, "kohonentsp.pattern.conf");
 
-	//getRandomWeight (W);
-	getCircularWeight(W);
+
+    //getRandomWeight (W);
+    getCircularWeight(W);
 
 	//getValue (buffer, "pattern.size", "kohonentsp.pattern.conf");
     patternSize = atoi (buffer);
 
-	// Aplica el algoritmo de aprendizaje a los patrones de entrada.
-    learnPatterns2 (W, E, X, patternSize);
+    if (!isPresentCommandLineParameter(argc,argv,"-nolearn"))
+    {
+        // Aplica el algoritmo de aprendizaje a los patrones de entrada.
+        learnPatterns2 (W, E, X, patternSize);
+    }
 
 	// Imprime la matriz de resultado.
 	printf ("pattern.size=%d\n\n", Di[1]);
@@ -233,12 +230,12 @@ main (int argc, char *argv[])
 	{
 		for (j = 0; j < Di[0]; j++)
 		{
-            //printf ("pattern.in.%d.%d=%12.10f\n", i, j,
-            //	*(W[0] + i * Di[0] + j));
+            printf ("pattern.in.%d.%d=%12.10f\n", i, j,
+                *(W[0] + i * Di[0] + j));
 
 
 		}
-        printf("%12.10f,%12.10f\n", *(W[0] + i * Di[0] + 0),*(W[0] + i * Di[0] + 1));
+        //printf("%12.10f,%12.10f\n", *(W[0] + i * Di[0] + 0),*(W[0] + i * Di[0] + 1));
 	}
 
 	return 1;

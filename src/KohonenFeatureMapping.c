@@ -1,7 +1,8 @@
 #include "Kohonen.c"
+#include "commandline.h"
 
 /**
- * Genera los patrones al azar que son muestras pertenecientes al circulo unitario.
+ * This code generates three clusters of points inside the -1,+1 region.
  *
  ***/
 void
@@ -104,9 +105,11 @@ main (int argc, char *argv[])
 	patternSize = atoi (buffer);
 
 
-    printf("Learning....\n");
-
-    learnPatterns (W, E, X, patternSize);
+    if (!isPresentCommandLineParameter(argc,argv,"-nolearn"))
+    {
+        printf("Learning....\n");
+        learnPatterns (W, E, X, patternSize);
+    }
 	//showWeight(W[0],Di[1],Di[0]);
 
 	//showRNeuron(E[0], Di[0]);
