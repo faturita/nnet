@@ -308,7 +308,9 @@ main (int argc, char *argv[])
 
 	// Realiza el ajuste de los pesos sinapticos en base a los patrones a aprender
 	// y a sus salidas deseadas
-	learnAll (W, E, X, Y, patternSize);
+    //learnAll (W, E, X, Y, patternSize);
+
+    batchLearn(W,E,X,Y,patternSize);
 
 	printf ("Matriz de pesos sinapticos:\n");
 	showNLWeight (W, Di, D);

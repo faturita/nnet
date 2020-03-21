@@ -40,6 +40,8 @@ void sigintHandler(int sig_num)
  * Los pesos sinapticos se encuentran en el rango -1<Wi<1
  *
  * W				Matriz con los pesos sinapticos para todos los layers
+ *
+ * @NOTE: las capas en las estructuras de datos de la red de kohonen están invertidas.
  **/
 void
 getCircularWeight (weight ** W)
@@ -169,17 +171,6 @@ generateTrainningSet (int patternSize)
 	free (zero);
 }
 
-int
-main_Generate (int argc, char *argv[])
-{
-    initRandom (0);
-    config ("kohonentsp.conf");
-
-	generateTrainningSet (atoi (argv[1]));
-
-	return 1;
-}
-
 
 
 int
@@ -190,6 +181,7 @@ main (int argc, char *argv[])
 	neuron **X, **Y;
 	int patternSize;
 	char buffer[256];
+    char patternFilename[256];
 
 	int i, j,iChance;
 	int winner;
@@ -222,16 +214,17 @@ main (int argc, char *argv[])
         exit (0);
     }
 
+    getValue (patternFilename, "pattern.filename", argv[1]);
 
 	init (&W, &E);
-	initLearningPatterns (&X, &Y, "kohonentsp.pattern.conf");
-	getLearningPatterns (X, Y, "kohonentsp.pattern.conf");
+    initLearningPatterns (&X, &Y, patternFilename);
+    getLearningPatterns (X, Y, patternFilename);
 
 
-    //getRandomWeight (W);
+    // Inicializa los pesos sinapticos formando un circulo en el centro del "espacio".
     getCircularWeight(W);
 
-    getValue (buffer, "pattern.size", "kohonentsp.pattern.conf");
+    getValue (buffer, "pattern.size", patternFilename);
     patternSize = atoi (buffer);
 
     if (!isPresentCommandLineParameter(argc,argv,"-nolearn"))

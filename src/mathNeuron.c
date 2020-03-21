@@ -90,3 +90,15 @@ unsigned int initRandom(unsigned int timeseed)
 
     return (unsigned int)(tim);
 }
+
+int rand_comparison(const void *a, const void *b)
+{
+    (void)a; (void)b;
+
+    return rand() % 2 ? +1 : -1;
+}
+
+void shuffle(void *base, size_t nmemb, size_t size)
+{
+    qsort(base, nmemb, size, rand_comparison);
+}

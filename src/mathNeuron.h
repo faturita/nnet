@@ -9,6 +9,9 @@
 #include <time.h>
 #include "assert.h"
 
+#define TRUE 1
+#define FALSE 0
+
 /**
  * Devuelve -1 o 1 .
  **/
@@ -52,3 +55,5 @@ float expsigmoid(float fVal);
  * Inicializa la semilla de los numeros pseudoaleatorios con la hora actual.
  **/
 unsigned int initRandom(unsigned int timeseed);
+int rand_comparison(const void *a, const void *b);
+void shuffle(void *base, size_t nmemb, size_t size);

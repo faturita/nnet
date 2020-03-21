@@ -114,6 +114,15 @@ init (weight *** W, neuron *** E)
 
 }
 
+void clearDW(weight ***DW)
+{
+    // Inicializacion matriz con los pesos sinapticos para todas las capas.
+    for (int i = 0; i < D; i++)
+    {
+
+        memset((*DW)[i], 0, sizeof (weight)*(Di[i] * Di[i + 1]));
+    }
+}
 
 void initDW(weight ***DW)
 {
@@ -335,7 +344,7 @@ int getFanOut(int k)
     int fanout = 0;
     if (k == 0) {
         fanout = Di[1];
-    } else if ( k == D-1)
+    } else if ( k == D)
     {
         fanout = 1;
     } else {
@@ -361,8 +370,9 @@ getRandomWeight (weight ** W)
     {
         float fanin, fanout;
 
-        fanin = getFanIn(k);
-        fanout = getFanOut(k);
+        fanin = (float)getFanIn(k);
+        fanout = (float)getFanOut(k);
+
 
         for (i = 0; i < Di[k]; i++)
         {
@@ -503,6 +513,25 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y, neuron **Eta)
 }
 
 
+int updateWeights(weight ** W, weight ** DW)
+{
+    int k, j, i;
+    // Aplica la delta rule sobre todos los pesos sinapticos de toda la red
+    for (k = D; k > 0; k--)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            for (j = 0; j < Di[k - 1]; j++)
+            {
+
+
+                    *(W[k - 1] + Di[k - 1] * i + j) += *(DW[k - 1] + Di[k - 1] * i + j) ;
+
+            }
+        }
+    }
+}
+
 /**
  * Ajusta los pesos sinapticos segun el algoritmo de backpropagation
  *
@@ -510,10 +539,11 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y, neuron **Eta)
  * E                 Valores de salida de todas las neuronas de todas las capas
  * DW                Delta en los pesos sinápticos.
  * Y                 Valores de salida finales deseados
+ * bUpdateWeight     Especifica si se actualizan o no los pesos sinapticos
  *
  **/
 int
-learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
+learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y, int bUpdateWeight)
 {
     weight dW;
     neuron **Li, **Eta;
@@ -552,7 +582,6 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
         {
             for (j = 0; j < Di[k - 1]; j++)
             {
-                // @TODO: we are missing the momentum value
                 dW = (weight) ((DELTA_WEIGHT) *
                                Li[(k) - 1][i] * E[k - 1][j]);
 
@@ -566,7 +595,10 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y)
 
                 //*(W[k - 1] + Di[k - 1] * i + j) += dW;
 
-                *(W[k - 1] + Di[k - 1] * i + j) += (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
+                if (bUpdateWeight)
+                {
+                    *(W[k - 1] + Di[k - 1] * i + j) += (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
+                }
                 *(DW[k - 1] + Di[k - 1] * i + j) = (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
 
             }
@@ -653,7 +685,7 @@ logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
  * E				Salidas de cada neurona de cada layer.
  * X				Patrones de entrada
  * Y				Valores deseados para cada patron.
- * patternSize Cantidad de patrones en el trainning set.
+ * patternSize      Cantidad de patrones en el trainning set.
  *
  **/
 void
@@ -692,7 +724,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
         }
 
         // Ajustar los pesos hasta que x REPLY_FACTOR repeticiones no se perciban cambios.
-        if (learn_backprop (W, E, DW, Y[iChance]) == 0)
+        if (learn_backprop (W, E, DW, Y[iChance], TRUE) == 0)
         {
             bLearn++;
             bLearnVector[iChance]++;
@@ -724,6 +756,86 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
 
     freeDW (&DW);
     free (bLearnVector);
+    return;
+}
+
+void
+batchLearn (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
+{
+    int bLearn = 0;
+    int j;
+    unsigned long iMUpdate = 0;
+    float rms=1;
+    weight **DW = NULL;
+
+    // Log info
+    sprintf (logBuffer,
+             "Error cuadratico medio cada %d actualizaciones.\n",
+             patternSize);
+    logInfo (logBuffer);
+
+    initDW(&DW);
+
+    while (bLearn < REPLY_FACTOR && (forceBreak == 0))
+    {
+        iMUpdate++;
+        clearDW(&DW);
+
+        int arr[patternSize];
+
+        memset(arr,0,sizeof(int)*patternSize);
+
+        for(int i=0;i<patternSize;i++) { arr[i]=i; }
+        shuffle(arr, patternSize, sizeof(int));
+
+        for(int iChance=0;iChance<patternSize;iChance++)
+        {
+            E[0][0] = -1;
+            for (j = 1; j < Di[0]; j++)
+            {
+                E[0][j] = X[arr[iChance]][j - 1];
+            }
+
+
+            // Ajustar los pesos hasta que x REPLY_FACTOR repeticiones no se perciban cambios.
+            if (learn_backprop (W, E, DW, Y[arr[iChance]],FALSE) == 0)
+            {
+                bLearn++;
+            }
+
+        }
+
+        updateWeights(W,DW);
+
+
+        if (iMUpdate % 100000 == 0)
+        {
+            printf("========> Batch: %d\n", bLearn);
+        }
+
+        // Log info solo si la salida es unidimensional
+        rms = logQuadraticError (W, E, X, Y, patternSize);
+        if (rms < RMS_BREAK)
+            break;
+
+        //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
+        //    break;
+
+        if (iMUpdate % 100000 == 0)
+        {
+            printf("%ld:%d\n", iMUpdate, bLearn);
+        }
+
+        if (iMUpdate % 1000000 == 0)
+        {
+            // Hago un poco de ruido.
+            addWeightNoise(W,-0.2,+0.2);
+        }
+    }
+
+    printf("Steps: %ld\n", iMUpdate);
+
+    freeDW (&DW);
     return;
 }
 
