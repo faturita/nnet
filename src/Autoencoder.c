@@ -317,6 +317,8 @@ main (int argc, char *argv[])
 	printf ("Matriz de pesos sinapticos:\n");
 	showNLWeight (W, Di, D);
 
+    saveWeight("autoencoder.weights", W);
+
     int acc = 0;
 	// Verifica la red con los patrones aprendidos
 	for (s = 0; s < patternSize; s++)

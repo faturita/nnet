@@ -710,7 +710,7 @@ batchPowelLearn (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int pattern
 
         int elapsed = (clock() - inicio) / CLOCKS_PER_SEC;
 
-        printf("Elapsed time %d [s] \n", elapsed);
+        printf("Elapsed time %d [s] (%10.2f [min])\n", elapsed, elapsed / 60.0);
 
         unserializeWeights(W,v);
 
@@ -748,6 +748,53 @@ batchPowelLearn (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int pattern
     free(vbetter);
 
     return;
+}
+
+/**
+ * Graba en sFileName una copia con los valores de los pesos sinapticos W
+ *
+ *
+ **/
+void saveWeight(char sFileName[], weight **W)
+{
+    FILE *pf = fopen(sFileName,"wb");
+
+    double *v;
+    int size;
+
+    v = initV(&size);
+
+    serializeWeights(W,v);
+
+    fwrite(v,sizeof(double),size,pf);
+
+    free(v);
+
+    fclose(pf);
+}
+
+/**
+ * Carga de sFileName una copia con los valores de los pesos sinapticos W
+ *
+ *
+ **/
+void loadWeight(char sFileName[], weight **W)
+{
+    FILE *pf = fopen(sFileName,"rb");
+
+    double *v;
+    int size;
+
+    v = initV(&size);
+
+    fread(v,sizeof(double),size,pf);
+
+    // W pointer here is already initialized.  This function just fills-in the values.
+    unserializeWeights(W,v);
+
+    free(v);
+
+    fclose(pf);
 }
 
 
