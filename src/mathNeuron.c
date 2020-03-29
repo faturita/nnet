@@ -56,7 +56,7 @@ float tanhsigmoid(float fVal) {
  * @return
  */
 float thetanhsigmoid(float fVal) {
-    printf ("%f\n", fVal);
+    //printf ("%f\n", fVal);
     float val = (1.7159*tanhsigmoid(2.0/3.0 * fVal));
     assert(!isnan(val) && "Error");
     return val;

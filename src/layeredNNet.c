@@ -31,6 +31,7 @@ typedef float weight;
 #include "logger.h"
 
 
+
 // Cantidad de iteraciones con variaciones de los pesos sinapticos nulas
 long REPLY_FACTOR;
 
@@ -72,6 +73,44 @@ int forceBreak = 0;
  * W				Puntero a la matriz W.
  * E				Puntero a las entradas y salidas de toda la red.
  **/
+void
+initW (weight ***W)
+{
+    int i = 0;
+
+    // D la cantidad de capas con neuronas (sin contar la entrada).
+    *W = (weight **) malloc (sizeof (weight *) * D);
+
+    if (*W == NULL)
+    {
+        printf ("No hay suficiente memoria.\n");
+        exit (-1);
+    }
+
+    // Inicializacion matriz con los pesos sinapticos para todas las capas.
+    for (i = 0; i < D; i++)
+    {
+        (*W)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i] * Di[i + 1]));
+        if ((*W)[i] == NULL)
+        {
+            printf ("No hay suficiente memoria.\n");
+            exit (-1);
+        }
+    }
+}
+
+void freeW(weight **W)
+{
+    for (int i = 0; i < D; i++)
+    {
+        free(W[i]);
+    }
+    free(W);
+}
+
+
 void
 init (weight *** W, neuron *** E)
 {
@@ -163,6 +202,27 @@ void freeDW(weight ***DW)
     //free( DW );
 }
 
+
+double *initV(int *size)
+{
+    int k, j, i;
+    double *v;
+
+    for (k = D; k > 0; k--)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            for (j = 0; j < Di[k - 1]; j++)
+            {
+                *size += 1;
+            }
+        }
+    }
+
+    v = (double*) malloc(sizeof(double) * (*size));
+
+    return v;
+}
 
 
 /**
@@ -430,8 +490,9 @@ evolve (neuron * X, weight * W, int i, int jMax)
     // TODO: Generalize this
     //return sgn(aux);
     //return expsigmoid(aux);
-    return tanhsigmoid (aux);
+    //return tanhsigmoid (aux);
     //return thetanhsigmoid(aux);
+    return (tanh(2.0 * aux) * 2.0);
 }
 
 
@@ -460,6 +521,233 @@ evolveLayeredNN (weight ** W, neuron ** E)
     }
 
     return E[D];
+}
+
+/**
+ * Devuelve el error cuadratico medio para una red neuronal feed forward multicapas
+ * en base a la comparacion salida contra salida deseada (Y) promediado
+ * sobre los patternSize patrones.
+ *
+ * W				Matriz pesos sinapticos para todos los layers
+ * E				Valores de salida para cada neurona en todos los layers
+ * X				Entradas
+ * Y 				Salidas
+ * patternSize	Cantidad de patrones
+ *
+ * Este calculo solo tiene validez cuando la red es single-output.
+ **/
+float
+getQuadraticError (float **W, float **E, float **X, float **Y,
+                   int patternSize)
+{
+    int p, j;
+    float fQErr=0;
+
+    for (p = 0; p < patternSize; p++)
+    {
+        E[0][0] = -1;
+        for (j = 1; j < Di[0]; j++)
+        {
+            E[0][j] = X[p][j - 1];
+        }
+        evolveLayeredNN (W, E);
+        for (j=0;j<Di[D];j++)
+        {
+            fQErr += (pow((Y[p][j] - E[D][j]),2));
+        }
+
+    }
+
+    fQErr = fQErr / (float) patternSize;
+    return fQErr;
+}
+
+float
+logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
+                   int patternSize)
+{
+    float rms=getQuadraticError (W, E, X, Y, patternSize);
+    if (isLogging ())
+    {
+        sprintf (logBuffer, "%12.10f\n",
+                 rms);
+        logInfo (logBuffer);
+    }
+    return rms;
+}
+
+void serializeWeights(weight ** W, double *v)
+{
+    int k, j, i;
+    int index=0;
+
+    for (k = 0; k < D; k++)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            for (j = 0; j < Di[k + 1]; j++)
+            {
+                v[index++] = *(W[k] + Di[k + 1] * i + j) ;
+            }
+        }
+    }
+}
+
+void unserializeWeights(weight ** W, double *v)
+{
+    int k, j, i;
+    int index=0;
+    // Aplica la delta rule sobre todos los pesos sinapticos de toda la red
+    for (k = 0; k < D; k++)
+    {
+        for (i = 0; i < Di[k]; i++)
+        {
+            for (j = 0; j < Di[k + 1]; j++)
+            {
+                *(W[k] + Di[k + 1] * i + j) =v[index++];
+            }
+        }
+    }
+}
+
+#include "praxis.h"
+
+
+#define t0				0.001
+#define h0				0.0001
+
+
+neuron **PX;
+neuron **PY;
+neuron **PE;
+int ptrnSize;
+
+double f(double *v, int size)
+{
+    weight **W;
+
+    int p, j;
+    double fQErr=0;
+
+    initW(&W);
+
+    unserializeWeights(W, v);
+
+    for (p = 0; p < ptrnSize; p++)
+    {
+        PE[0][0] = -1;
+        for (j = 1; j < Di[0]; j++)
+        {
+            PE[0][j] = PX[p][j - 1];
+        }
+        evolveLayeredNN (W, PE);
+        for (j=0;j<Di[D];j++)
+        {
+            fQErr += (pow((PY[p][j] - PE[D][j]),2));
+        }
+
+    }
+
+
+    //fQErr = fQErr / ((double)ptrnSize);
+
+    fQErr = (pow(fQErr, 0.5) / 2.0);
+
+    if (isnan(fQErr))
+    {
+        printf("Nan value received\n");
+        showNLWeight(W,Di,D);
+        exit(-1);
+    }
+
+    if (isLogging ())
+    {
+        sprintf (logBuffer, "%12.10f\n",
+                 fQErr);
+        logInfo (logBuffer);
+    }
+
+
+    //fQErr = (pow(fQErr, 0.5) / 2.0);
+
+    //printf("%10.5f\n", fQErr);
+
+    freeW(W);
+
+    return fQErr;
+}
+
+
+void
+batchPowelLearn (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
+{
+    int bLearn = 0;
+    unsigned long iMUpdate = 0;
+    double rms=1, rmsbetter=100;
+
+    double *v, *vbetter;
+    int size=0, sizebetter=0;
+
+    v=initV(&size);
+    vbetter = initV(&sizebetter);
+
+
+    //while (bLearn < REPLY_FACTOR && (forceBreak == 0))
+    {
+        iMUpdate++;
+
+        serializeWeights(W,v);
+
+        PX = X;
+        PY = Y;
+        PE = E;
+
+        ptrnSize = patternSize;
+
+        clock_t inicio = clock();
+
+        rms = praxis ( t0, h0, size, 0, v, f);
+
+        int elapsed = (clock() - inicio) / CLOCKS_PER_SEC;
+
+        printf("Elapsed time %d [s] \n", elapsed);
+
+        unserializeWeights(W,v);
+
+
+        if (iMUpdate % 100000 == 0)
+        {
+            printf("========> Batch: %d\n", bLearn);
+        }
+
+        // Log info solo si la salida es unidimensional
+        rms = logQuadraticError (W, E, X, Y, patternSize);
+        if (rms < RMS_BREAK)
+            //break;
+
+        if (rms < rmsbetter)
+        {
+            memcpy(vbetter,v,size);
+            rmsbetter = rms;
+        }
+
+        //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
+        //    break;
+
+        if (iMUpdate % 100000 == 0)
+        {
+            printf("%ld:%d\n", iMUpdate, bLearn);
+        }
+    }
+
+    printf("Steps: %ld\n", iMUpdate);
+
+    //unserializeWeights(W,vbetter);
+
+    free(v);
+    free(vbetter);
+
+    return;
 }
 
 
@@ -523,7 +811,6 @@ int updateWeights(weight ** W, weight ** DW)
         {
             for (j = 0; j < Di[k - 1]; j++)
             {
-
 
                     *(W[k - 1] + Di[k - 1] * i + j) += *(DW[k - 1] + Di[k - 1] * i + j) ;
 
@@ -618,58 +905,7 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y, int bUpdateW
     return bLearn;
 }
 
-/**
- * Devuelve el error cuadratico medio para una red neuronal feed forward multicapas
- * en base a la comparacion salida contra salida deseada (Y) promediado
- * sobre los patternSize patrones.
- *
- * W				Matriz pesos sinapticos para todos los layers
- * E				Valores de salida para cada neurona en todos los layers
- * X				Entradas
- * Y 				Salidas
- * patternSize	Cantidad de patrones
- *
- * Este calculo solo tiene validez cuando la red es single-output.
- **/
-float
-getQuadraticError (float **W, float **E, float **X, float **Y,
-                   int patternSize)
-{
-    int p, j;
-    float fQErr=0;
 
-    for (p = 0; p < patternSize; p++)
-    {
-        E[0][0] = -1;
-        for (j = 1; j < Di[0]; j++)
-        {
-            E[0][j] = X[p][j - 1];
-        }
-        evolveLayeredNN (W, E);
-        for (j=0;j<Di[D];j++)
-        {
-            fQErr += (pow((Y[p][j] - E[D][j]),2));
-        }
-
-    }
-
-    fQErr = fQErr / (float) patternSize;
-    return fQErr;
-}
-
-float
-logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
-                   int patternSize)
-{
-    float rms=getQuadraticError (W, E, X, Y, patternSize);
-    if (isLogging ())
-    {
-        sprintf (logBuffer, "%12.10f\n",
-                 rms);
-        logInfo (logBuffer);
-    }
-    return rms;
-}
 
 /**
  * learnAll
@@ -758,6 +994,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
     free (bLearnVector);
     return;
 }
+
 
 void
 batchLearn (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)

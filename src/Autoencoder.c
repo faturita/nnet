@@ -310,7 +310,9 @@ main (int argc, char *argv[])
 	// y a sus salidas deseadas
     //learnAll (W, E, X, Y, patternSize);
 
-    batchLearn(W,E,X,Y,patternSize);
+    //batchLearn(W,E,X,Y,patternSize);
+
+    batchPowelLearn(W, E, X, Y, patternSize);
 
 	printf ("Matriz de pesos sinapticos:\n");
 	showNLWeight (W, Di, D);
