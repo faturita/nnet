@@ -116,7 +116,7 @@ init (weight *** W, neuron *** E)
 {
     int i = 0;
 
-    // D la cantidad de capas con neuronas (sin contar la entrada).
+    // D es el numero de capas de pesos sinapticos que hay (las conexiones). D+1 es la cantidad de capas de la red.
     *W = (weight **) malloc (sizeof (weight *) * D);
     *E = (neuron **) malloc (sizeof (weight *) * (D + 1));
 
@@ -376,13 +376,21 @@ config (char *filename)
         getValue (buffer, aux1, filename);
         Di[k] = atoi (buffer);
         // +1 por el bias.
-        if (k == 0)
+        if (k<D)   // Bias para todos y todas, excepto la capa de salida.
             Di[k]++;
     }
 
     // TODO: Asserts for null pointers
     // TODO: Check if there is a misconfiguration file.
     return 1;
+}
+
+void summary()
+{
+    printf("Number of Weight Layers %d\n", D);
+    for (int k=0;k<D;k++) {
+        printf ("Layer: %d M (%d,%d)\n",k,Di[k],Di[k+1]);
+    }
 }
 
 int getFanIn(int k)
@@ -514,7 +522,8 @@ evolveLayeredNN (weight ** W, neuron ** E)
     // para procesar hacia delante.
     for (k = 0 + 1; k < D + 1; k++)
     {
-        for (i = 0; i < Di[k]; i++)
+        E[k][0] = -1;  // Bias en cada layer
+        for (i = 1; i < Di[k]; i++)
         {
             E[k][i] = evolve (E[k - 1], W[k - 1], i, Di[k - 1]);
         }
@@ -635,7 +644,8 @@ double f(double *v, int size)
 
     for (p = 0; p < ptrnSize; p++)
     {
-        PE[0][0] = -1;
+        for(int k=0;k<D;k++)
+            PE[k][0] = -1;
         for (j = 1; j < Di[0]; j++)
         {
             PE[0][j] = PX[p][j - 1];

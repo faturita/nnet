@@ -249,6 +249,7 @@ main (int argc, char *argv[])
 
     // Configuracion de la red
     config (argv[1]);
+    summary();
 
     // Inicializacion de la generacion de numeros pseudoaleatorios
     timeseed = initRandom (timeseed);
@@ -263,7 +264,7 @@ main (int argc, char *argv[])
 	}
 
 	// Inicializacion de la red en base a la configucaion (variables globales)
-	init (&W, &E);
+    init (&W, &E);
 
     printf("Network initialized\n");
 
@@ -324,7 +325,8 @@ main (int argc, char *argv[])
 	for (s = 0; s < patternSize; s++)
 	{
 		// Entrada del bias fija
-		E[0][0] = -1;
+        for(int k=0;k<D;k++)
+            E[k][0] = -1;
 		for (i = 1; i < Di[0]; i++)
 		{
 			E[0][i] = X[s][i - 1];
