@@ -612,9 +612,9 @@ void unserializeWeights(weight ** W, double *v)
 
 #include "praxis.h"
 
-
-#define t0				0.001
-#define h0				0.0001
+// t is tolerance, h step size.
+#define t0				0.0001
+#define h0				0.00001
 
 
 neuron **PX;
@@ -668,7 +668,6 @@ double f(double *v, int size)
     }
 
 
-    //fQErr = (pow(fQErr, 0.5) / 2.0);
 
     //printf("%10.5f\n", fQErr);
 
