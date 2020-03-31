@@ -30,6 +30,7 @@ Una capa sola, que tendra N entradas y M salidas.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include "mathNeuron.h"
 #include "arrayView.h"
