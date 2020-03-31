@@ -249,6 +249,7 @@ main (int argc, char *argv[])
 
     // Configuracion de la red
     config (argv[1]);
+    summary();
 
     // Inicializacion de la generacion de numeros pseudoaleatorios
     timeseed = initRandom (timeseed);

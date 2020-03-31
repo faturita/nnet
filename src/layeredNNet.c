@@ -385,6 +385,14 @@ config (char *filename)
     return 1;
 }
 
+void summary()
+{
+    printf("Number of Weight Layers %d\n", D);
+    for (int k=0;k<D;k++) {
+        printf ("Layer: %d M (%d,%d)\n",k,Di[k],Di[k+1]);
+    }
+}
+
 int getFanIn(int k)
 {
     int fanin = 0;
