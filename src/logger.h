@@ -1,6 +1,6 @@
 extern FILE *pfLogFile;
 
-char logBuffer[256];
+
 
 /**
  * Funcion de loggin sobre file pointer pfLogFile

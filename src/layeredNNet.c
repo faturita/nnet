@@ -30,7 +30,7 @@ typedef float weight;
 #include "parameter.h"
 #include "logger.h"
 
-
+extern char logBuffer[256];
 
 // Cantidad de iteraciones con variaciones de los pesos sinapticos nulas
 long REPLY_FACTOR;

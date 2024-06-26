@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "logger.h"
 
+char logBuffer[256];
+
 /**
  * Si esta seteada la variable global para logging devuelve VERDADERo
  * sino FALsO.

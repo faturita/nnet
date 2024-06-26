@@ -23,6 +23,8 @@ A su vez tengo
 #include "Kohonen.c"
 #include "commandline.h"
 
+extern char logBuffer[256];
+
 int forceBreak = 0;
 
 void sigintHandler(int sig_num)

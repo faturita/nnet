@@ -37,6 +37,8 @@ Una capa sola, que tendra N entradas y M salidas.
 #include "parameter.h"
 #include "logger.h"
 
+extern char logBuffer[256];
+
 
 FILE *pfLogFile;
 
