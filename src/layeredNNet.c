@@ -136,6 +136,7 @@ init (weight *** W, neuron *** E)
             printf ("No hay suficiente memoria.\n");
             exit (-1);
         }
+        memset((*E)[i], 0, sizeof (neuron) * Di[i]);
     }
 
     // Inicializacion matriz con los pesos sinapticos para todas las capas.
@@ -149,6 +150,7 @@ init (weight *** W, neuron *** E)
             printf ("No hay suficiente memoria.\n");
             exit (-1);
         }
+
     }
 
 }
@@ -498,9 +500,9 @@ evolve (neuron * X, weight * W, int i, int jMax)
     // TODO: Generalize this
     //return sgn(aux);
     //return expsigmoid(aux);
-    //return tanhsigmoid (aux);
+    return tanhsigmoid (aux);
     //return thetanhsigmoid(aux);
-    return (tanh(2.0 * aux) * 2.0);
+    //return (tanh(2.0 * aux) * 2.0);
 }
 
 
@@ -830,6 +832,7 @@ getLi (neuron ** Li, weight ** W, neuron ** E, neuron * Y, neuron **Eta)
             // Para el ultimo layer
             for (i = 0; i < Di[k]; i++)
             {
+                // @NOTE: Do not forget to initialize the ETA value otherwise Li will be always zero.
                 if ((Eta[(k-1)][i])==0) (Eta[(k-1)][i]) = 1.0/getFanIn(k);
                 //Li[(k - 1)][i] =  (2.0/3.0) * (1.7159) * (1 - (4.0/9.0)*E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
                 Li[(k - 1)][i] =  (Eta[(k-1)][i]) * (1 - E[k][i] * E[k][i]) * (Y[i] - E[k][i]);
@@ -889,7 +892,7 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y, int bUpdateW
     weight dW;
     neuron **Li, **Eta;
     int k, j, i;
-    int bLearn = 0;
+    int bLearn = FALSE;
 
     // Estructura para contener los valores de retropropagacion del error
     Li = (neuron **) malloc (sizeof (neuron *) * (D));
@@ -926,21 +929,23 @@ learn_backprop (weight ** W, neuron ** E, weight ** DW, neuron * Y, int bUpdateW
                 dW = (weight) ((DELTA_WEIGHT) *
                                Li[(k) - 1][i] * E[k - 1][j]);
 
+                printf("dW[%d][%d][%d]=%f\n",k-1,i,j,dW);
+
                 // Incrementando ACCURACY haces que la red sea mas laxa en la condicion de terminacion.
                 if (fabs (dW) > 0.001)
                 {
-                    bLearn = 1;
+                    bLearn = TRUE;
                     // Si bLearn true, entonces la red sigue intentando aprender.
                     // @FIXME El valor suele ser muy chico si la dimension es mayor a 1
                 }
 
-                //*(W[k - 1] + Di[k - 1] * i + j) += dW;
+                *(W[k - 1] + Di[k - 1] * i + j) += dW;
 
                 if (bUpdateWeight)
                 {
-                    *(W[k - 1] + Di[k - 1] * i + j) += (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
+                //    *(W[k - 1] + Di[k - 1] * i + j) += (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
                 }
-                *(DW[k - 1] + Di[k - 1] * i + j) = (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
+                //*(DW[k - 1] + Di[k - 1] * i + j) = (dW + MOMENTUM * (*(DW[k - 1] + Di[k - 1] * i + j)));
 
             }
         }
@@ -1014,7 +1019,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
         }
 
         // Ajustar los pesos hasta que x REPLY_FACTOR repeticiones no se perciban cambios.
-        if (learn_backprop (W, E, DW, Y[iChance], TRUE) == 0)
+        if (learn_backprop (W, E, DW, Y[iChance], TRUE) == FALSE)
         {
             bLearn++;
             bLearnVector[iChance]++;
@@ -1023,8 +1028,8 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
         if ((iMUpdate % patternSize) == 0)
         {
             rms = logQuadraticError (W, E, X, Y, patternSize);
-            if (rms < RMS_BREAK)
-                break;
+           // if (rms < RMS_BREAK)
+           //     break;
 
             //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
             //    break;
@@ -1038,7 +1043,7 @@ learnAll (weight ** W, neuron ** E, neuron ** X, neuron ** Y, int patternSize)
         if (iMUpdate % 1000000 == 0)
         {
             // Hago un poco de ruido.
-            addWeightNoise(W,-0.1,+0.1);
+            //addWeightNoise(W,-0.1,+0.1);
         }
     }
 
@@ -1161,7 +1166,7 @@ learn (weight ** W, neuron ** E, neuron * Y)
  */
 neuron fx (neuron x, neuron y, neuron z)
 {
-    return ((sin (x * M_PI + M_PI) + cos (y * M_PI + M_PI) + z) / 3);
+    return ((sin (x * 3.141516 + 3.141516) + cos (y * 3.141516 + 3.141516) + z) / 3);
 }
 
 

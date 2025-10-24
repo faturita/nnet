@@ -6,10 +6,10 @@ log.filename=layerperceptron.log.fx
 log.input=input.dat
 log.output=output.dat
 pattern.filename=layerperceptron.pattern.conf.fx
-reply.factor=4000000
+reply.factor=400000000
 accuracy=0.3
 delta.li=0.5
-delta.weight=0.1
+delta.weight=0.01
 showOutputFx=1
 
 

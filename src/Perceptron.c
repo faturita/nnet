@@ -12,6 +12,18 @@
  **/
 #include "layeredNNet.c"
 
+#include "signal.h"
+
+void sigintHandler(int sig_num)
+{
+    /* Reset handler to catch SIGINT next time.
+       Refer http://en.cppreference.com/w/c/program/signal */
+    signal(SIGINT, sigintHandler);
+    forceBreak = 1;
+    fflush(stdout);
+}
+
+
 FILE *pfLogFile;
 FILE *pfInput;
 FILE *pfOutput;
@@ -36,6 +48,7 @@ main (int argc, char *argv[])
     initRandom (0);
 
 	printf ("Backpropagation\n");
+    signal(SIGINT, sigintHandler);
 
 	if (argc != 2)
 	{
@@ -113,6 +126,7 @@ main (int argc, char *argv[])
 			E[0][i] = X[s][i - 1];
 		}
 		showRNeuron (E[0], Di[0]);
+
 
 		// Evoluciona la red
 		evolveLayeredNN (W, E);
