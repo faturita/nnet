@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 /***************************************************************************
  * Lee los parámetros de la línea de comando devolviendo el dato

@@ -1,8 +1,8 @@
 FUENTES=src/*.c
 PRODUCTO=HopfieldNet
 BIN=bin/
-CGLAGS=-g -0
-LIB=-lm
+CGLAGS=-g -w -Wall -fpermissive
+LIB=-lm 
 all:	$(PRODUCTO)
 $(PRODUCTO):	$(FUENTES)
 
@@ -15,6 +15,8 @@ $(PRODUCTO):	$(FUENTES)
 	gcc $(CFLAGS) -o $(BIN)Kohonen           src/commandline.c src/parameter.c                  src/KohonenFeatureMapping.c          src/arrayView.c     src/mathNeuron.c src/logger.c $(LIB)
 	gcc $(CFLAGS) -o $(BIN)AnnealingHopfield src/parameter.c src/gridParser.c src/AnnealingHopfield.c                                  src/mathNeuron.c $(LIB)
 	gcc $(CFLAGS) -o $(BIN)Autoencoder       src/praxis.c src/parameter.c                  src/Autoencoder.c                    src/arrayView.c     src/mathNeuron.c src/logger.c $(LIB)
+	gcc $(CFLAGS) -o $(BIN)nnet		         src/praxis.c src/parameter.c                  src/mlp.c           			         src/arrayView.c     src/mathNeuron.c src/logger.c  $(LIB)
+
 
 Showme: $(FUENTES)
 	gcc -g -Wall -o bin/showme src/showme.c src/parameter.c -lgtk -rdynamic -lgmodule -lglib -ldl -lXext -lX11 -lm -I/usr/include/gtk-1.2/ -I/usr/include/glib-1.2/ -I/usr/lib/glib/include/

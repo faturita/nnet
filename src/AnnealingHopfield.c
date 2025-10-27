@@ -1,7 +1,7 @@
 /**
- * Implementación de una red de hopfield 82, pero utilizando para la solución del aprendizaje de los patrones
+ * Implementaciï¿½n de una red de hopfield 82, pero utilizando para la soluciï¿½n del aprendizaje de los patrones
  * Simulated Annealing......
- * Tenemos primero que definir el funcional que para este caso es la función de Energía de H'82
+ * Tenemos primero que definir el funcional que para este caso es la funciï¿½n de Energï¿½a de H'82
  * 
  * E = -1/2 Ei Ej  Uij(t) Yi Yj - 1/2 Ei Ej Uij(t) Y2i Y2j
  * 
@@ -14,31 +14,34 @@
  *
  * 
  *
- * Arranco con T en 100 y desciende en función t(t+1) = b T(t), siendo b el coeficiente de variación
- * Uij (t+1) = Nu  p  Uij(t), Siendo N el coeficiente de variación de los pesos sinápticos, p azar <-1,1>
+ * Arranco con T en 100 y desciende en funciï¿½n t(t+1) = b T(t), siendo b el coeficiente de variaciï¿½n
+ * Uij (t+1) = Nu  p  Uij(t), Siendo N el coeficiente de variaciï¿½n de los pesos sinï¿½pticos, p azar <-1,1>
  * 
  * k, contaste de Boltzman = 1
  * Pseudocodigo:
  *
- * - Genero un Uij simetríco al azar.
+ * - Genero un Uij simetrï¿½co al azar.
  * A
- * - Calculo la Energía del Sistema Et = E = -1/2 Ei Ej  Uij(t) Yi Yj - 1/2 Ei Ej Uij(t) Y2i Y2j
+ * - Calculo la Energï¿½a del Sistema Et = E = -1/2 Ei Ej  Uij(t) Yi Yj - 1/2 Ei Ej Uij(t) Y2i Y2j
  * - Elijo un valor de i y de j al azar y de p, entre 1.-1, y actualizo Uij (t+1) = Nu p Uij(t)
  * - Calculo la Energia del Sistema Et+1
  * - DE = Et+1 - Et
  * - Si DE >= 0 
  * - Calculo r random (0,1); Si r < P=exp (  -DE / (T*k) )     ----->    Acepto
- * - Sino rechazo la variación de Uij y Uij(t+1)=Uij(t)
+ * - Sino rechazo la variaciï¿½n de Uij y Uij(t+1)=Uij(t)
  * - Si DE < 0 continuo
- * - Varío T según g(T,t)=Tt+1= b T(t)
- * - Si la DE es cero en REPLY_FACTOR iteraciones y la T < Tc cierta temperatura crítica del sistema, termina.
+ * - Varï¿½o T segï¿½n g(T,t)=Tt+1= b T(t)
+ * - Si la DE es cero en REPLY_FACTOR iteraciones y la T < Tc cierta temperatura crï¿½tica del sistema, termina.
  * - Sino Continua.
  *
- * -- Al terminar en Uij deberían estar los pesos sinapticos para recordar los dos patrones almacenadso
+ * -- Al terminar en Uij deberï¿½an estar los pesos sinapticos para recordar los dos patrones almacenadso
  *
  *
  **/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "gridParser.h"
 #include "mathNeuron.h"
 #include "neuron.c"
 
