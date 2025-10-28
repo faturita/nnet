@@ -1,3 +1,26 @@
+/**
+ * Pure C implementation of a Multi Layer Perceptron (MLP) neural network
+ * 
+ * Featuring:
+ * - Configurable number of layers and neurons per layer.
+ * - Hyperbolic tangent activation function.
+ * - Backpropagation learning algorithm.
+ * - Momentum support.
+ * - RMS error calculation and logging.
+ * - Random weight initialization within calculated limits.
+ * 
+ * 
+ * This will have:
+ * - Adjustable precision in terms of the aproximation.
+ * - Support for different activation functions.
+ * - Different optimization algorithms
+ * - GPU-parallelized version with OpenCL and CUDA.
+ * - Support for various loss functions.
+ * 
+ * 
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,13 +39,214 @@ typedef float weight;
 #include "parameter.h"
 #include "logger.h"
 #include "signal.h"
-
 #include "mlp.h"
 
-#include "layeredNNet.c"
+extern char logBuffer[256];
+
+// How many iterations with no weight changes
+long REPLY_FACTOR;
+
+// Adjustment to determine if a synaptic weight varies or not.
+float ACCURACY;
+
+// Factor on the impact of output values on the synaptic weights
+// of neurons in the internal layers
+float LI_E;
+
+// Factor on the variation of synaptic weights.
+float DELTA_WEIGHT;
+
+// Momentum parameter
+float MOMENTUM;
+
+// RMS cutoff value.
+float RMS_BREAK;
+
+// How many layers for the perceptron (maximum path of the graph)
+int D;
+
+// Dimension array with the number of neurons in each layer. Dim(Di) = D+1 (because of the input)
+int *Di;
+
+unsigned int timeseed;
+
+int forceBreak = 0;
+
+void generateTrainingSet ()
+{
+    neuron x[5];
+    neuron y[5];
+    neuron z[5];
+    neuron fx;
+    int i, j, k;
+
+    for (i = 0; i < 5; i++)
+    {
+        x[i] = getNaturalMinMaxProb (0, 2 * M_PI);
+        y[i] = getNaturalMinMaxProb (0, 2 * M_PI);
+        z[i] = getNaturalMinMaxProb (-1, 1);
+    }
+
+    printf ("pattern.size=125\n\n");
+    for (i = 0; i < 5; i++)
+    {
+        for (j = 0; j < 5; j++)
+        {
+            for (k = 0; k < 5; k++)
+            {
+                fx = sin (x[i]) + cos (y[j]) + z[k];
+                printf ("pattern.in.%d.0=%12.10f\n",
+                        i * 25 + j * 5 + k,
+                        (x[i] - M_PI) / (M_PI));
+                printf ("pattern.in.%d.1=%12.10f\n",
+                        i * 25 + j * 5 + k,
+                        (y[j] - M_PI) / (M_PI));
+                printf ("pattern.in.%d.2=%12.10f\n",
+                        i * 25 + j * 5 + k, z[k]);
+                printf ("pattern.out.%d.0=%12.10f\n\n",
+                        i * 25 + j * 5 + k, fx / 3);
+            }
+        }
+    }
+}
 
 
-void summarize()
+void
+initLearningPatterns (neuron *** X, neuron *** Y, char *filename)
+{
+    int iSize;
+    int p;
+    char buffer[MAXSIZE];
+
+    printf ("Reading file...\n");
+
+    // Dataset size parameter.
+    getValue (buffer, "pattern.size", filename);
+    iSize = atoi (buffer);
+
+    *X = (neuron **) malloc (sizeof (neuron *) * iSize);
+    *Y = (neuron **) malloc (sizeof (neuron *) * iSize);
+
+    if (((*X) == NULL) || ((*Y) == NULL))
+    {
+        printf ("Not enough memory\n");
+        exit (-1);
+    }
+
+    for (p = 0; p < iSize; p++)
+    {
+        // D is the number of layers (excluding input layer)
+        // Di[0] is the number of input neurons
+        // Di[D] is the number of output neurons (Di has size D+1 because it includes the input layer)
+        *(*X + p) = (neuron *) malloc (sizeof (neuron) * Di[0]);
+        *(*Y + p) = (neuron *) malloc (sizeof (neuron) * Di[D]);
+
+        if (((*X + p) == NULL) || (*(*Y + p) == NULL))
+        {
+            printf ("Not enough memory.\n");
+            exit (-1);
+        }
+    }
+}
+
+void getLearningPatterns (neuron ** X, neuron ** Y, char *filename)
+{
+    int iSize;
+    int p;
+    int j;
+    char buffer[MAXSIZE];
+    char aux1[MAXSIZE];
+
+
+    getValue (buffer, "pattern.size", filename);
+    iSize = atoi (buffer);
+
+    for (p = 0; p < iSize; p++)
+    {
+        for (j = 0; j < Di[0]; j++)
+        {
+            sprintf (aux1, "pattern.in.%d.%d", p, j);
+            getValue (buffer, aux1, filename);
+            X[p][j] = (neuron) atof (buffer);
+        }
+
+        for (j = 0; j < Di[D]; j++)
+        {
+            sprintf (aux1, "pattern.out.%d.%d", p, j);
+            getValue (buffer, aux1, filename);
+            Y[p][j] = (neuron) atof (buffer);
+        }
+
+    }
+}
+
+
+int
+config (char *filename)
+{
+    char buffer[MAXSIZE];
+    char aux1[MAXSIZE];
+    int k;
+
+    getValue (buffer, "layer.size", filename);
+    D = atoi (buffer);
+
+    getValue (buffer, "reply.factor", filename);
+    REPLY_FACTOR = atol (buffer);
+
+    getValue (buffer, "accuracy", filename);
+    ACCURACY = atof (buffer);
+
+    getValue (buffer, "delta.li", filename);
+    LI_E = atof (buffer);
+
+    getValue (buffer, "delta.weight", filename);
+    DELTA_WEIGHT = atof (buffer);
+
+    timeseed = 0;
+    getValue (buffer, "timeseed", filename);
+    if (strlen(buffer)>1)
+        timeseed = atoi(buffer);
+
+    MOMENTUM = 0;
+    getValue(buffer, "momentum", filename);
+    if (strlen(buffer)>1)
+        MOMENTUM = atof(buffer);
+
+    RMS_BREAK = 0.1;
+    getValue(buffer,"rms.break", filename);
+    if (strlen(buffer)>1)
+        RMS_BREAK = atof(buffer);
+
+    // +1 por las entradas
+    Di = (int *) malloc (sizeof (int) * (D + 1));
+
+    if (Di == NULL)
+    {
+        printf ("No hay suficiente memoria.\n");
+        exit (-1);
+    }
+
+    for (k = 0; k < D + 1; k++)
+    {
+        sprintf (aux1, "layer.%d", k);
+        getValue (buffer, aux1, filename);
+        Di[k] = atoi (buffer);
+    }
+
+    // TODO: Asserts for null pointers
+    // TODO: Check if there is a misconfiguration file.
+    return 1;
+}
+
+
+
+neuron fx (neuron x, neuron y, neuron z)
+{
+    return ((sin (x * 3.141516 + 3.141516) + cos (y * 3.141516 + 3.141516) + z) / 3);
+}
+
+void summary()
 {
     printf("Number of Weight Layers %d\n", D);
     for (int k=0;k<D;k++) {
@@ -30,7 +254,17 @@ void summarize()
     }
 }
 
-void showWeights(float **W, int *Di, int D) {
+int getFanIn(int k)
+{
+    return Di[k];
+}
+
+int getFanOut(int k)
+{
+    return Di[k+1];
+}
+
+void showWeights(weight **W, int *Di, int D) {
 	int i,k,j;
    
    for (k=0;k<D;k++) {
@@ -50,19 +284,18 @@ void getRandomWeights (weight ** W)
         fanin = (float)getFanIn(k);
         fanout = (float)getFanOut(k);
 
+        float limit = sqrtf(6.0f / (fanin + fanout));
+
 
         for (i=0;i<Di[k + 1]*(Di[k]+1);i++)
         {
-            *(W[k] + i) = getNaturalMinMaxProb (-1, 1) * (sqrt(6.0)/sqrtf(fanin+fanout));
+            *(W[k] + i) = getNaturalMinMaxProb (-limit, limit);
         }
     }
 
     return;
 }
 
-
-extern int D;
-extern int *Di;
 
 float activation(float fVal) {
 	return ( (exp( fVal ) - exp ( -fVal ))/(exp(fVal) + exp(-fVal)));
@@ -249,9 +482,42 @@ void loadPattern(neuron * dest, neuron * X)
 	dest[Di[0]] = -1; // Fixed bias
 }
 
+float getQuadraticError (float **W, float **E, float **X, float **Y,
+                   int patternSize)
+{
+    int p, j;
+    float fQErr=0;
 
-int
-main (int argc, char *argv[])
+    for (p = 0; p < patternSize; p++)
+    {
+		loadPattern(E[0],X[p]);
+		forward(W, E);	
+        for (j=0;j<Di[D];j++)
+        {
+            fQErr += (pow((Y[p][j] - E[D][j]),2));
+        }
+
+    }
+
+    fQErr = fQErr / (float) patternSize;
+    return fQErr;
+}
+
+float logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
+                   int patternSize)
+{
+    float rms=getQuadraticError (W, E, X, Y, patternSize);
+    if (TRUE)
+    {
+        sprintf (logBuffer, "%12.10f\n",
+                 rms);
+        logInfo (logBuffer);
+    }
+    return rms;
+}
+
+
+int main (int argc, char *argv[])
 {
 	weight **W;		
 	neuron **E;		
@@ -269,7 +535,7 @@ main (int argc, char *argv[])
 
     initRandom (0);
 
-	printf ("Backpropagation\n");
+	printf ("Pure C implementation of a Multi Layer Perceptron (MLP) neural network\n");
     signal(SIGINT, sigintHandler);
 
 	if (argc != 2)
@@ -280,7 +546,7 @@ main (int argc, char *argv[])
 
 	if (strcmp (argv[1], "-f") == 0)
 	{
-		generateTrainningSet ();
+		generateTrainingSet ();
 		exit (0);
 	}
 
@@ -321,7 +587,7 @@ main (int argc, char *argv[])
 	getValue (buffer, "showOutputFx", argv[1]);
 	bShowOutputFx = atoi (buffer);
 
-	summarize();
+	summary();
 
 	int iChance = getProb (0, patternSize);
 	int patternIndex = iChance;
@@ -333,9 +599,15 @@ main (int argc, char *argv[])
 
 	neuron **Li = initLi();
 
-	float eta = 0.001;
+	float eta = 0.01;
 
-	for(int tries=0;tries<1000000000;tries++)
+    long tries = 0;
+
+    float rms = 0.0f;
+
+    int updates = 0;
+
+	while (tries++ < REPLY_FACTOR && !forceBreak)
 	{
 		iChance = getProb (0, patternSize);
 		loadPattern(E[0],X[iChance]);
@@ -369,7 +641,24 @@ main (int argc, char *argv[])
 			}
 		}
 
+        if ((tries % patternSize) == 0)
+        {
+            rms = logQuadraticError (W, E, X, Y, patternSize);
+            if (rms < RMS_BREAK)
+                break;
+
+            //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
+            //    break;
+        }
+
+        if (tries % 100000 == 0)
+        {
+            printf("%ld:%d\n", tries, updates);
+        }
+
 	}
+
+    cleanLi(Li);
 
 	// loadPattern(E[0],X[patternIndex]);
 	// showRNeuron (E[0], Di[0]+1);printf ("\n");
@@ -382,10 +671,10 @@ main (int argc, char *argv[])
 	{
 		iChance = s;
 		loadPattern(E[0],X[iChance]);
-		showRNeuron (E[0], Di[0]+1);
+		showRNeuron (E[0], Di[0]+1);        // +1 for bias
 		forward(W, E);
 		if (bShowOutputFx)
-			printf ("%12.10f", fx (E[0][1], E[0][2], E[0][3]));
+			printf (" %12.10f", fx (E[0][0], E[0][1], E[0][2]));
 		
 		printf (">");	
 		showRNeuron (E[D], Di[D]);printf ("\n");
