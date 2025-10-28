@@ -16,7 +16,7 @@
  * - Different optimization algorithms
  * - GPU-parallelized version with OpenCL and CUDA.
  * - Support for various loss functions.
- * 
+ * - KAN neural model support.
  * 
  */
 
@@ -213,7 +213,7 @@ config (char *filename)
     if (strlen(buffer)>1)
         MOMENTUM = atof(buffer);
 
-    RMS_BREAK = 0.1;
+    RMS_BREAK = 0.0001;
     getValue(buffer,"rms.break", filename);
     if (strlen(buffer)>1)
         RMS_BREAK = atof(buffer);
@@ -248,10 +248,13 @@ neuron fx (neuron x, neuron y, neuron z)
 
 void summary()
 {
+    int freeparameters = 0;
     printf("Number of Weight Layers %d\n", D);
     for (int k=0;k<D;k++) {
         printf ("Layer: %d M (%d neuron, of %d dim)\n",k,Di[k+1],Di[k]+1);
+        freeparameters += Di[k+1]*(Di[k]+1);
     }
+    printf("Total free parameters: %d\n", freeparameters);
 }
 
 int getFanIn(int k)
@@ -348,8 +351,7 @@ void forward(weight ** W, neuron ** E)
 }
 
 
-void
-allocate (weight *** W, weight *** dW, neuron *** E)
+void allocate (weight *** W, weight *** dW, neuron *** E)
 {
     int i = 0;
 
@@ -459,8 +461,6 @@ void back(neuron **Li, weight ** W, neuron ** E, neuron * Y)
 
 void sigintHandler(int sig_num)
 {
-    /* Reset handler to catch SIGINT next time.
-       Refer http://en.cppreference.com/w/c/program/signal */
     signal(SIGINT, sigintHandler);
     forceBreak = 1;
     fflush(stdout);
@@ -517,10 +517,25 @@ float logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
 }
 
 
+/**
+ * E are the neuron outputs, E[0] input layer, E[D] output layer.  E[k] is of size Di[k]+1 (bias). E[k][Di[k]] = -1
+ * X are the input patterns, of size patternSize x Di[0]
+ * Y are the target outputs, of size patternSize x Di[D]
+ * 
+ * W are the synaptic weights, W[k] is the weight matrix between layer k and k+1, of size Di[k+1] x (Di[k]+1)
+ *      So W[k] has Di[k+1] neurons rows and Di[k]+1 columns inputs to the layer (including the extra bias).  
+ * 
+ * dW are the delta weights, same size as W.
+ * 
+ * Li are the local gradients, Li[k] is of size Di[k].
+ * 
+ * 
+ * 
+ */
 int main (int argc, char *argv[])
 {
-	weight **W;		
-	neuron **E;		
+	weight **W;		// weights
+	neuron **E;		// input layer, and neuron outputs.
 	neuron **Y;		// labels
 	neuron **X;		// training set
 
@@ -644,7 +659,7 @@ int main (int argc, char *argv[])
         if ((tries % patternSize) == 0)
         {
             rms = logQuadraticError (W, E, X, Y, patternSize);
-            if (rms < RMS_BREAK)
+            if (rms < 0.0001)
                 break;
 
             //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
