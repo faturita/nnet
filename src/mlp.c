@@ -624,26 +624,38 @@ int main (int argc, char *argv[])
 
     int updates = 0;
 
+    int batchsize = patternSize;
+
 	while (tries++ < REPLY_FACTOR && !forceBreak)
 	{
-		iChance = getProb (0, patternSize);
-		loadPattern(E[0],X[iChance]);
-		forward(W, E);						// Updates E
-		back(Li,W,E,Y[iChance]);			// Updates Li
+        int arr[patternSize];
+        memset(arr,0,sizeof(int)*patternSize);
 
-		for (int k = 0; k < D; k++)
-    	{
-        	for (int i = 0; i < Di[k+1]; i++)
-        	{
-				int cols = Di[k]+1;
-            	for (int j = 0; j < Di[k]+1; j++)
-            	{
-					//printf("dW[%d][%d][%d]\n",k,i,j);
-                	 *(*(dW + k) + i * cols + j)   = (weight) ((- eta) *
-                               Li[k][i] * E[k][j]);
-				}
-			}
-		}
+        for(int i=0;i<patternSize;i++) { arr[i]=i; }
+            shuffle(arr, patternSize, sizeof(int));
+        
+        for(int b=0; b<batchsize;b++)
+        {
+            //iChance = getProb (0, patternSize);
+            iChance = b;
+            loadPattern(E[0],X[arr[iChance]]);
+            forward(W, E);						// Updates E
+            back(Li,W,E,Y[arr[iChance]]);			// Updates Li
+
+            for (int k = 0; k < D; k++)
+            {
+                for (int i = 0; i < Di[k+1]; i++)
+                {
+                    int cols = Di[k]+1;
+                    for (int j = 0; j < Di[k]+1; j++)
+                    {
+                        //printf("dW[%d][%d][%d]\n",k,i,j);
+                        *(*(dW + k) + i * cols + j)   = (weight) ((- eta) *
+                                Li[k][i] * E[k][j]);
+                    }
+                }
+            }
+        }
 
 		for (int k = 0; k < D; k++)
     	{
@@ -657,6 +669,13 @@ int main (int argc, char *argv[])
 				}
 			}
 		}
+
+        if (rms < 0.8)
+        {
+            eta += 0.01;
+        } else {
+            eta = DELTA_WEIGHT;
+        }
 
         if ((tries % patternSize) == 0)
         {
@@ -672,6 +691,55 @@ int main (int argc, char *argv[])
         }
 
 	}
+
+	// while (tries++ < REPLY_FACTOR && !forceBreak)
+	// {
+	// 	iChance = getProb (0, patternSize);
+	// 	loadPattern(E[0],X[iChance]);
+	// 	forward(W, E);						// Updates E
+	// 	back(Li,W,E,Y[iChance]);			// Updates Li
+
+	// 	for (int k = 0; k < D; k++)
+    // 	{
+    //     	for (int i = 0; i < Di[k+1]; i++)
+    //     	{
+	// 			int cols = Di[k]+1;
+    //         	for (int j = 0; j < Di[k]+1; j++)
+    //         	{
+	// 				//printf("dW[%d][%d][%d]\n",k,i,j);
+    //             	 *(*(dW + k) + i * cols + j)   = (weight) ((- eta) *
+    //                            Li[k][i] * E[k][j]);
+	// 			}
+	// 		}
+	// 	}
+
+	// 	for (int k = 0; k < D; k++)
+    // 	{
+    //     	for (int i = 0; i < Di[k+1]; i++)
+    //     	{
+	// 			int cols = Di[k]+1;
+    //         	for (int j = 0; j < Di[k]+1; j++)
+    //         	{
+	// 				//printf("dW[%d][%d][%d]\n",k,i,j);
+    //             	 *(*(W + k) + i * cols + j)   += *(*(dW + k) + i * cols + j); 
+	// 			}
+	// 		}
+	// 	}
+
+    //     if ((tries % patternSize) == 0)
+    //     {
+    //         rms = logQuadraticError (W, E, X, Y, patternSize);
+    //         if (rms < RMS_BREAK)
+    //             break;
+
+    //     }
+
+    //     if (tries % 100000 == 0)
+    //     {
+    //         printf("%ld:%d\n", tries, updates);
+    //     }
+
+	// }
 
 	// loadPattern(E[0],X[patternIndex]);
 	// showRNeuron (E[0], Di[0]+1);printf ("\n");
