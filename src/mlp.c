@@ -405,21 +405,10 @@ void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li)
 
     for (int k = D; k > 0; k--)
     {
-        *(Li + (k - 1)) = (neuron *) malloc (sizeof (neuron) * Di[k]);
+        (*Li)[k - 1] = (neuron *) malloc (sizeof (neuron) * Di[k]);
 
-        memset(*(Li + (k - 1)),0,sizeof (neuron) * Di[k]);
+        memset((*Li)[k - 1],0,sizeof (neuron) * Di[k]);
     }
-}
-
-
-void cleanLi(neuron **Li)
-{
-    for (int k = D; k > 0; k--)
-    {
-        free (*(Li + (k - 1)));
-    }
-
-    free (Li);
 }
 
 
@@ -627,9 +616,6 @@ int main (int argc, char *argv[])
 	forward(W, E);
 	showRNeuron (E[D], Di[D]);printf ("\n");
 
-
-	neuron **Li = initLi();
-
 	float eta = DELTA_WEIGHT;
 
     long tries = 0;
@@ -686,8 +672,6 @@ int main (int argc, char *argv[])
         }
 
 	}
-
-    cleanLi(Li);
 
 	// loadPattern(E[0],X[patternIndex]);
 	// showRNeuron (E[0], Di[0]+1);printf ("\n");
