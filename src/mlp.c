@@ -255,6 +255,13 @@ void summary()
         freeparameters += Di[k+1]*(Di[k]+1);
     }
     printf("Total free parameters: %d\n", freeparameters);
+    printf("Reply factor: %ld\n", REPLY_FACTOR);
+    printf("Accuracy: %f\n", ACCURACY);
+    printf("Delta Li: %f\n", LI_E);
+    printf("Delta Weight: %f\n", DELTA_WEIGHT);
+    printf("Momentum: %f\n", MOMENTUM);
+    printf("RMS Break: %f\n", RMS_BREAK);
+
 }
 
 int getFanIn(int k)
@@ -351,7 +358,7 @@ void forward(weight ** W, neuron ** E)
 }
 
 
-void allocate (weight *** W, weight *** dW, neuron *** E)
+void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li)
 {
     int i = 0;
 
@@ -359,8 +366,9 @@ void allocate (weight *** W, weight *** dW, neuron *** E)
     *W = (weight **) malloc (sizeof (weight *) * D);
     *dW = (weight **) malloc (sizeof (weight *) * D);
     *E = (neuron **) malloc (sizeof (neuron *) * (D + 1));
+    *Li = (neuron **) malloc (sizeof (neuron *) * (D));
 
-    if (*W == NULL || *E == NULL || *dW == NULL)
+    if (*W == NULL || *E == NULL || *dW == NULL || *Li == NULL)
     {
         printf ("Not enough memory.\n");
         exit (-1);
@@ -393,13 +401,7 @@ void allocate (weight *** W, weight *** dW, neuron *** E)
             printf ("Not enough memory.\n");
             exit (-1);
         }
-
     }
-}
-
-neuron** initLi()
-{
-    neuron **Li = (neuron **) malloc (sizeof (neuron *) * (D));
 
     for (int k = D; k > 0; k--)
     {
@@ -407,9 +409,8 @@ neuron** initLi()
 
         memset(*(Li + (k - 1)),0,sizeof (neuron) * Di[k]);
     }
-
-    return Li;
 }
+
 
 void cleanLi(neuron **Li)
 {
@@ -516,6 +517,20 @@ float logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
     return rms;
 }
 
+int checkBinary(neuron *Ei,int iSizeInput, neuron *Eo, int iSizeOutput)
+{
+    int oks = 0;
+
+    assert(iSizeInput == iSizeOutput || !"Size mismatch in checkBinary");
+
+    for(int i=0;i<iSizeInput;i++)
+    {
+        if (sgn(Ei[i]) == sgn(Eo[i]))
+            oks++;
+    }
+    return oks;
+}
+
 
 /**
  * E are the neuron outputs, E[0] input layer, E[D] output layer.  E[k] is of size Di[k]+1 (bias). E[k][Di[k]] = -1
@@ -540,6 +555,7 @@ int main (int argc, char *argv[])
 	neuron **X;		// training set
 
 	weight **dW;	// Delta sinaptic weights.
+    neuron **Li;	// Local gradients
 
 	char buffer[MAXSIZE];	// Buffer auxiliar
 	char patternFilename[MAXSIZE];	
@@ -586,7 +602,7 @@ int main (int argc, char *argv[])
         printf ("No log.\n");
     }
 
-	allocate (&W, &dW, &E);
+	allocate (&W, &dW, &E, &Li);
 
 	getRandomWeights (W);
     showWeights (W, Di, D);
@@ -614,7 +630,7 @@ int main (int argc, char *argv[])
 
 	neuron **Li = initLi();
 
-	float eta = 0.01;
+	float eta = DELTA_WEIGHT;
 
     long tries = 0;
 
@@ -659,11 +675,9 @@ int main (int argc, char *argv[])
         if ((tries % patternSize) == 0)
         {
             rms = logQuadraticError (W, E, X, Y, patternSize);
-            if (rms < 0.0001)
+            if (rms < RMS_BREAK)
                 break;
 
-            //if (rms < (0.0005 * Di[D]) ) // @TODO add me as a parameter
-            //    break;
         }
 
         if (tries % 100000 == 0)
@@ -682,6 +696,8 @@ int main (int argc, char *argv[])
 	// showRNeuron (E[D], Di[D]);printf ("\n");
 
 
+    int acc = 0;
+    int oks = 0;
 	for(int s=0;s<patternSize;s++)
 	{
 		iChance = s;
@@ -693,7 +709,17 @@ int main (int argc, char *argv[])
 		
 		printf (">");	
 		showRNeuron (E[D], Di[D]);printf ("\n");
+        int res = checkBinary(E[0],Di[0], E[D], Di[D]);
+        oks += res;
+        if (res == Di[0])
+            acc++;
 	}
+
+    printf("Success %d/%d rate: %10.4f\n", acc,patternSize, (acc/(float)patternSize));
+    printf("OKs: %d, %d\n", oks, patternSize * Di[0]);
+    printf("Seed: %u\n", timeseed);
+    printf("Tries: %ld\n", tries);
+    printf("Final RMS: %12.10f\n", rms);
 
     return 0;
 }
