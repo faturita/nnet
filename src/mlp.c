@@ -633,6 +633,14 @@ int main (int argc, char *argv[])
 
         for(int i=0;i<patternSize;i++) { arr[i]=i; }
             shuffle(arr, patternSize, sizeof(int));
+
+        for (i = 0; i < D; i++)
+        {
+            int inputdimension = Di[i+1];
+            int neurons = Di[i] + 1;
+            int num_elements = neurons * inputdimension;
+            memset(*(dW + i ), 0, sizeof(weight) * num_elements); 
+        }
         
         for(int b=0; b<batchsize;b++)
         {
@@ -650,7 +658,7 @@ int main (int argc, char *argv[])
                     for (int j = 0; j < Di[k]+1; j++)
                     {
                         //printf("dW[%d][%d][%d]\n",k,i,j);
-                        *(*(dW + k) + i * cols + j)   = (weight) ((- eta) *
+                        *(*(dW + k) + i * cols + j)   += (weight) ((- eta) *
                                 Li[k][i] * E[k][j]);
                     }
                 }
