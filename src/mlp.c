@@ -553,8 +553,6 @@ int main (int argc, char *argv[])
 	int i, s;		
 	int bShowOutputFx = 0;	
 
-    initRandom (0);
-
 	printf ("Pure C implementation of a Multi Layer Perceptron (MLP) neural network\n");
     signal(SIGINT, sigintHandler);
 
@@ -572,6 +570,8 @@ int main (int argc, char *argv[])
 
 	// Get network architecture
 	config (argv[1]);
+
+    timeseed = initRandom (timeseed);
 
 	getValue (logFilename, "log.filename", argv[1]);
 
@@ -620,7 +620,7 @@ int main (int argc, char *argv[])
 
     long tries = 0;
 
-    float rms = 0.0f;
+    float rms = 0.0f, lastRms = 0.0f;
 
     int updates = 0;
 
@@ -670,13 +670,6 @@ int main (int argc, char *argv[])
 			}
 		}
 
-        if (rms < 0.8)
-        {
-            eta += 0.01;
-        } else {
-            eta = DELTA_WEIGHT;
-        }
-
         if ((tries % patternSize) == 0)
         {
             rms = logQuadraticError (W, E, X, Y, patternSize);
@@ -685,61 +678,16 @@ int main (int argc, char *argv[])
 
         }
 
+
         if (tries % 100000 == 0)
         {
             printf("%ld:%d\n", tries, updates);
+
+            printf("RMS: %12.10f LastRMS: %12.10f Eta: %f\n", rms, lastRms, eta);
+
         }
 
 	}
-
-	// while (tries++ < REPLY_FACTOR && !forceBreak)
-	// {
-	// 	iChance = getProb (0, patternSize);
-	// 	loadPattern(E[0],X[iChance]);
-	// 	forward(W, E);						// Updates E
-	// 	back(Li,W,E,Y[iChance]);			// Updates Li
-
-	// 	for (int k = 0; k < D; k++)
-    // 	{
-    //     	for (int i = 0; i < Di[k+1]; i++)
-    //     	{
-	// 			int cols = Di[k]+1;
-    //         	for (int j = 0; j < Di[k]+1; j++)
-    //         	{
-	// 				//printf("dW[%d][%d][%d]\n",k,i,j);
-    //             	 *(*(dW + k) + i * cols + j)   = (weight) ((- eta) *
-    //                            Li[k][i] * E[k][j]);
-	// 			}
-	// 		}
-	// 	}
-
-	// 	for (int k = 0; k < D; k++)
-    // 	{
-    //     	for (int i = 0; i < Di[k+1]; i++)
-    //     	{
-	// 			int cols = Di[k]+1;
-    //         	for (int j = 0; j < Di[k]+1; j++)
-    //         	{
-	// 				//printf("dW[%d][%d][%d]\n",k,i,j);
-    //             	 *(*(W + k) + i * cols + j)   += *(*(dW + k) + i * cols + j); 
-	// 			}
-	// 		}
-	// 	}
-
-    //     if ((tries % patternSize) == 0)
-    //     {
-    //         rms = logQuadraticError (W, E, X, Y, patternSize);
-    //         if (rms < RMS_BREAK)
-    //             break;
-
-    //     }
-
-    //     if (tries % 100000 == 0)
-    //     {
-    //         printf("%ld:%d\n", tries, updates);
-    //     }
-
-	// }
 
 	// loadPattern(E[0],X[patternIndex]);
 	// showRNeuron (E[0], Di[0]+1);printf ("\n");
@@ -772,6 +720,7 @@ int main (int argc, char *argv[])
     printf("Seed: %u\n", timeseed);
     printf("Tries: %ld\n", tries);
     printf("Final RMS: %12.10f\n", rms);
+    printf("Final Eta: %f\n", eta);
 
     return 0;
 }
