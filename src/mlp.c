@@ -41,6 +41,12 @@ typedef float weight;
 #include "signal.h"
 #include "mlp.h"
 
+
+// Define Adam hyperparameters
+const double beta1 = 0.9;
+const double beta2 = 0.999;
+const double epsilon = 1e-8;
+
 extern char logBuffer[256];
 
 // How many iterations with no weight changes
@@ -331,17 +337,22 @@ void forward(weight ** W, neuron ** E)
 }
 
 
-void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li)
+void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li, weight *** M, weight *** V)
 {
     int i = 0;
 
     // D represents how many layers with neurons.
     *W = (weight **) malloc (sizeof (weight *) * D);
+
+    *M = (weight **) malloc (sizeof (weight *) * D);
+    *V = (weight **) malloc (sizeof (weight *) * D);
+
+
     *dW = (weight **) malloc (sizeof (weight *) * D);
     *E = (neuron **) malloc (sizeof (neuron *) * (D + 1));
     *Li = (neuron **) malloc (sizeof (neuron *) * (D));
 
-    if (*W == NULL || *E == NULL || *dW == NULL || *Li == NULL)
+    if (*W == NULL || *E == NULL || *dW == NULL || *Li == NULL || *M == NULL || *V == NULL)
     {
         printf ("Not enough memory.\n");
         exit (-1);
@@ -369,12 +380,35 @@ void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li)
         (*dW)[i] =
                 (weight *) malloc (sizeof (weight) *
                                    (Di[i + 1]) * (Di[i]+1));
-        if ((*W)[i] == NULL || (*dW)[i] == NULL)
+
+        (*M)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i + 1]) * (Di[i]+1));
+
+        (*V)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i + 1]) * (Di[i]+1));
+
+
+
+        if ((*W)[i] == NULL || (*dW)[i] == NULL || (*M)[i] == NULL || (*V)[i] == NULL)
         {
             printf ("Not enough memory.\n");
             exit (-1);
         }
     }
+
+
+    for(i = 0; i < D; i++)
+    {
+        memset((*W)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+        memset((*dW)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+        memset((*M)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+        memset((*V)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+    }
+
+
+
 
     for (int k = D; k > 0; k--)
     {
@@ -569,21 +603,75 @@ int checkBinary(neuron *Ei,int iSizeInput, neuron *Eo, int iSizeOutput)
     return oks;
 }
 
+void inline batchUpdate(weight **W, float eta, weight **dW)
+{
+    for (int k = 0; k < D; k++)
+    {
+        for (int i = 0; i < Di[k + 1]; i++)
+        {
+            int cols = Di[k] + 1;
+            for (int j = 0; j < Di[k] + 1; j++)
+            {
+                // printf("dW[%d][%d][%d]\n",k,i,j);
+                *(*(W + k) + i * cols + j) += (-eta) * (*(*(dW + k) + i * cols + j));
+            }
+        }
+    }
+}
+
+void adamUpdate(weight **W, float eta, weight **dW, weight **M, weight **V, int t, int batchsize)
+{
+    for (int k = 0; k < D; k++)
+    {
+        for (int i = 0; i < Di[k+1]; i++)   
+        {
+            int cols = Di[k]+1;
+            for (int j = 0; j < Di[k]+1; j++)
+            {
+                // 1. Get the average gradient over the mini-batch
+                // (We summed gradients in dW, now we divide by batchsize)
+                weight g_t = *(*(dW + k) + i * cols + j) / (weight)batchsize;
+
+                // 2. Get old moments
+                weight m_old = *(*(M + k) + i * cols + j);
+                weight v_old = *(*(V + k) + i * cols + j);
+
+                // 3. Update biased first moment (m)
+                weight m_t = beta1 * m_old + (1.0 - beta1) * g_t;
+                *(*(M + k) + i * cols + j) = m_t;
+
+                // 4. Update biased second moment (v)
+                weight v_t = beta2 * v_old + (1.0 - beta2) * (g_t * g_t);
+                *(*(V + k) + i * cols + j) = v_t;
+
+                // 5. Compute bias-corrected first moment (m_hat)
+                weight m_hat_t = m_t / (1.0 - pow(beta1, t));
+
+                // 6. Compute bias-corrected second moment (v_hat)
+                weight v_hat_t = v_t / (1.0 - pow(beta2, t));
+
+                // 7. Update weight (W)
+                // W = W - eta * m_hat / (sqrt(v_hat) + epsilon)
+                *(*(W + k) + i * cols + j) -= eta * m_hat_t / (sqrt(v_hat_t) + epsilon);
+            }
+        }
+    }
+}
 
 /**
  * E are the neuron outputs, E[0] input layer, E[D] output layer.  E[k] is of size Di[k]+1 (bias). E[k][Di[k]] = -1
  * X are the input patterns, of size patternSize x Di[0]
  * Y are the target outputs, of size patternSize x Di[D]
- * 
+ *
  * W are the synaptic weights, W[k] is the weight matrix between layer k and k+1, of size Di[k+1] x (Di[k]+1)
- *      So W[k] has Di[k+1] neurons rows and Di[k]+1 columns inputs to the layer (including the extra bias).  
- * 
+ *      So W[k] has Di[k+1] neurons rows and Di[k]+1 columns inputs to the layer (including the extra bias).
+ *
  * dW are the delta weights, same size as W.
- * 
+ *
  * Li are the local gradients, Li[k] is of size Di[k].
- * 
- * 
- * 
+ *
+ *
+ *
  */
 int main (int argc, char *argv[])
 {
@@ -594,6 +682,9 @@ int main (int argc, char *argv[])
 
 	weight **dW;	// Delta sinaptic weights.
     neuron **Li;	// Local gradients
+
+    weight **M;    // First moment estimates for Adam
+    weight **V;    // Second moment estimates for Adam
 
 	char buffer[MAXSIZE];	// Buffer auxiliar
 	char patternFilename[MAXSIZE];	
@@ -629,7 +720,7 @@ int main (int argc, char *argv[])
         printf ("No log.\n");
     }
 
-	allocate (&W, &dW, &E, &Li);
+	allocate (&W, &dW, &E, &Li, &M, &V);
 
     if ((argc >2 && strcmp (argv[2], "-l") == 0))
 	{
@@ -717,18 +808,9 @@ int main (int argc, char *argv[])
             }
         }
 
-		for (int k = 0; k < D; k++)
-    	{
-        	for (int i = 0; i < Di[k+1]; i++)
-        	{
-				int cols = Di[k]+1;
-            	for (int j = 0; j < Di[k]+1; j++)
-            	{
-					//printf("dW[%d][%d][%d]\n",k,i,j);
-                	 *(*(W + k) + i * cols + j)   += (-eta) * (*(*(dW + k) + i * cols + j)); 
-				}
-			}
-		}
+        //batchUpdate(W, eta, dW);
+        adamUpdate(W, eta, dW, M, V, tries, batchsize);
+
 
         if ((tries % patternSize) == 0)
         {
@@ -793,4 +875,5 @@ int main (int argc, char *argv[])
 
     return 0;
 }
+
 

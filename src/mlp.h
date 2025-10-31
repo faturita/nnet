@@ -18,4 +18,4 @@ typedef float weight;
 
 void forward(weight ** W, neuron ** E);
 void back(neuron **Li, weight ** W, neuron ** E, neuron * Y);
-void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li);
+void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li, weight *** M, weight *** V);
