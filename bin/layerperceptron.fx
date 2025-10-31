@@ -9,8 +9,9 @@ pattern.filename=layerperceptron.pattern.conf.fx
 reply.factor=400000000
 accuracy=0.3
 delta.li=0.5
-delta.weight=0.01
+delta.weight=0.001
 showOutputFx=1
+rms.break=0.001
 
 
 

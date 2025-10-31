@@ -1,7 +1,7 @@
 layer.size=4
 layer.0=35
 layer.1=10
-layer.2=10
+layer.2=2
 layer.3=10
 layer.4=35
 log.filename=autoencoder.log
@@ -14,5 +14,6 @@ delta.li=0.2
 delta.weight=0.001
 momentum=0.7
 rms.break=0.01
-tdimeseed=1583150910
+timeseed=1583150910
+calculateAccuracyBinary=1
 

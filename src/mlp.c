@@ -72,44 +72,6 @@ unsigned int timeseed;
 
 int forceBreak = 0;
 
-void generateTrainingSet ()
-{
-    neuron x[5];
-    neuron y[5];
-    neuron z[5];
-    neuron fx;
-    int i, j, k;
-
-    for (i = 0; i < 5; i++)
-    {
-        x[i] = getNaturalMinMaxProb (0, 2 * M_PI);
-        y[i] = getNaturalMinMaxProb (0, 2 * M_PI);
-        z[i] = getNaturalMinMaxProb (-1, 1);
-    }
-
-    printf ("pattern.size=125\n\n");
-    for (i = 0; i < 5; i++)
-    {
-        for (j = 0; j < 5; j++)
-        {
-            for (k = 0; k < 5; k++)
-            {
-                fx = sin (x[i]) + cos (y[j]) + z[k];
-                printf ("pattern.in.%d.0=%12.10f\n",
-                        i * 25 + j * 5 + k,
-                        (x[i] - M_PI) / (M_PI));
-                printf ("pattern.in.%d.1=%12.10f\n",
-                        i * 25 + j * 5 + k,
-                        (y[j] - M_PI) / (M_PI));
-                printf ("pattern.in.%d.2=%12.10f\n",
-                        i * 25 + j * 5 + k, z[k]);
-                printf ("pattern.out.%d.0=%12.10f\n\n",
-                        i * 25 + j * 5 + k, fx / 3);
-            }
-        }
-    }
-}
-
 
 void
 initLearningPatterns (neuron *** X, neuron *** Y, char *filename)
@@ -244,6 +206,17 @@ config (char *filename)
 neuron fx (neuron x, neuron y, neuron z)
 {
     return ((sin (x * 3.141516 + 3.141516) + cos (y * 3.141516 + 3.141516) + z) / 3);
+}
+
+int noOfFreeParameters()
+{
+    int freeparameters = 0;
+
+    for (int k=0;k<D;k++) {
+        freeparameters += Di[k+1]*(Di[k]+1);
+    }
+        
+    return freeparameters;
 }
 
 void summary()
@@ -457,6 +430,82 @@ void sigintHandler(int sig_num)
 }
 
 
+void serializeWeights(weight ** W, double *v)
+{
+    int k, i;
+    int index=0;
+
+
+    for (k = 0; k < D; k++)
+    {
+        for (i=0;i<Di[k + 1]*(Di[k]+1);i++)
+        {
+                v[index++] = *(W[k] + i) ;
+        }
+    }
+}
+
+void unserializeWeights(weight ** W, double *v)
+{
+    int k, i;
+    int index=0;
+
+    for (k = 0; k < D; k++)
+    {
+        for (i=0;i<Di[k + 1]*(Di[k]+1);i++)
+        {
+            *(W[k] + i) =v[index++];
+        }
+    }
+}
+
+void saveWeight(char sFileName[], weight **W)
+{
+    FILE *pf = fopen(sFileName,"wb");
+
+    double *v;
+    int size;
+
+    size = noOfFreeParameters();
+
+    v = (double*) malloc(sizeof(double) * size);
+
+    serializeWeights(W,v);
+
+    fwrite(v,sizeof(double),size,pf);
+
+    free(v);
+
+    fclose(pf);
+}
+
+/**
+ * Carga de sFileName una copia con los valores de los pesos sinapticos W
+ *
+ *
+ **/
+void loadWeight(char sFileName[], weight **W)
+{
+    FILE *pf = fopen(sFileName,"rb");
+
+    double *v;
+    int size;
+
+    size = noOfFreeParameters();
+
+    v = (double*) malloc(sizeof(double) * size);
+
+    fread(v,sizeof(double),size,pf);
+
+    // W pointer here is already initialized.  This function just fills-in the values.
+    unserializeWeights(W,v);
+
+    free(v);
+
+    fclose(pf);
+}
+
+
 FILE *pfLogFile;
 FILE *pfInput;
 FILE *pfOutput;
@@ -551,22 +600,11 @@ int main (int argc, char *argv[])
 	char logFilename[MAXSIZE];	
 	int patternSize;	
 	int i, s;		
-	int bShowOutputFx = 0;	
+	int showOutputFx = 0;	
+    int calculateAccuracyBinary = 0;
 
 	printf ("Pure C implementation of a Multi Layer Perceptron (MLP) neural network\n");
     signal(SIGINT, sigintHandler);
-
-	if (argc != 2)
-	{
-
-		exit (-1);
-	}
-
-	if (strcmp (argv[1], "-f") == 0)
-	{
-		generateTrainingSet ();
-		exit (0);
-	}
 
 	// Get network architecture
 	config (argv[1]);
@@ -593,7 +631,17 @@ int main (int argc, char *argv[])
 
 	allocate (&W, &dW, &E, &Li);
 
-	getRandomWeights (W);
+    if ((argc >2 && strcmp (argv[2], "-l") == 0))
+	{
+        printf("Loading weights from file mlp.weights\n");
+        loadWeight("mlp.weights", W);
+    }
+    else
+    {
+        getRandomWeights (W);   
+
+    }
+
     showWeights (W, Di, D);
 
 	getValue (patternFilename, "pattern.filename", argv[1]);
@@ -605,7 +653,10 @@ int main (int argc, char *argv[])
 	patternSize = atoi (buffer);
 
 	getValue (buffer, "showOutputFx", argv[1]);
-	bShowOutputFx = atoi (buffer);
+	showOutputFx = atoi (buffer);
+
+    getValue (buffer, "calculateAccuracyBinary", argv[1]);
+    calculateAccuracyBinary = atoi (buffer);
 
 	summary();
 
@@ -658,8 +709,9 @@ int main (int argc, char *argv[])
                     for (int j = 0; j < Di[k]+1; j++)
                     {
                         //printf("dW[%d][%d][%d]\n",k,i,j);
-                        *(*(dW + k) + i * cols + j)   += (weight) ((- eta) *
-                                Li[k][i] * E[k][j]);
+                        weight raw_grad = Li[k][i] * E[k][j];
+
+                        *(*(dW + k) + i * cols + j)   += raw_grad;
                     }
                 }
             }
@@ -673,7 +725,7 @@ int main (int argc, char *argv[])
             	for (int j = 0; j < Di[k]+1; j++)
             	{
 					//printf("dW[%d][%d][%d]\n",k,i,j);
-                	 *(*(W + k) + i * cols + j)   += *(*(dW + k) + i * cols + j); 
+                	 *(*(W + k) + i * cols + j)   += (-eta) * (*(*(dW + k) + i * cols + j)); 
 				}
 			}
 		}
@@ -704,7 +756,7 @@ int main (int argc, char *argv[])
 	// showRNeuron (E[D], Di[D]);printf ("\n");
 
 
-    int acc = 0;
+    int acc,acc1 = 0;
     int oks = 0;
 	for(int s=0;s<patternSize;s++)
 	{
@@ -712,16 +764,24 @@ int main (int argc, char *argv[])
 		loadPattern(E[0],X[iChance]);
 		showRNeuron (E[0], Di[0]+1);        // +1 for bias
 		forward(W, E);
-		if (bShowOutputFx)
+		if (showOutputFx)
 			printf (" %12.10f", fx (E[0][0], E[0][1], E[0][2]));
 		
 		printf (">");	
 		showRNeuron (E[D], Di[D]);printf ("\n");
-        int res = checkBinary(E[0],Di[0], E[D], Di[D]);
-        oks += res;
-        if (res == Di[0])
-            acc++;
+
+        if (calculateAccuracyBinary)
+        {
+            int res = checkBinary(E[D],Di[D], Y[iChance], Di[D]);
+            oks += res;
+            if (res == Di[D])
+                acc++;
+            if (res >= (Di[D]-1))
+                acc1++;
+        }
 	}
+
+    saveWeight("mlp.weights", W);
 
     printf("Success %d/%d rate: %10.4f\n", acc,patternSize, (acc/(float)patternSize));
     printf("OKs: %d, %d\n", oks, patternSize * Di[0]);
@@ -729,6 +789,7 @@ int main (int argc, char *argv[])
     printf("Tries: %ld\n", tries);
     printf("Final RMS: %12.10f\n", rms);
     printf("Final Eta: %f\n", eta);
+    printf("1-Bit error success %d/%d rate: %10.4f\n", acc1,patternSize, (acc1/(float)patternSize));
 
     return 0;
 }
