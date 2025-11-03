@@ -603,7 +603,7 @@ int checkBinary(neuron *Ei,int iSizeInput, neuron *Eo, int iSizeOutput)
     return oks;
 }
 
-void inline batchUpdate(weight **W, float eta, weight **dW)
+void batchUpdate(weight **W, float eta, weight **dW)
 {
     for (int k = 0; k < D; k++)
     {
@@ -613,7 +613,7 @@ void inline batchUpdate(weight **W, float eta, weight **dW)
             for (int j = 0; j < Di[k] + 1; j++)
             {
                 // printf("dW[%d][%d][%d]\n",k,i,j);
-                *(*(W + k) + i * cols + j) += (-eta) * (*(*(dW + k) + i * cols + j));
+                *(*(W + k) + i * cols + j) +=  (-eta) * (*(*(dW + k) + i * cols + j));
             }
         }
     }
@@ -838,7 +838,7 @@ int main (int argc, char *argv[])
 	// showRNeuron (E[D], Di[D]);printf ("\n");
 
 
-    int acc,acc1 = 0;
+    int acc=0,acc1 = 0;
     int oks = 0;
 	for(int s=0;s<patternSize;s++)
 	{
