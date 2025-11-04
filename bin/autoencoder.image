@@ -8,12 +8,12 @@ log.filename=autoencoder.log
 log.input=input.dat
 log.output=output.dat
 pattern.filename=autoencoder.pattern.conf.image
-reply.factor=1000000
+reply.factor=8000000
 accuracy=0.4
 delta.li=0.2
 delta.weight=0.001
 momentum=0.0007
 rms.break=0.01
-timeseed=1583150910
+timedseed=1583150910
 calculateAccuracyBinary=1
 

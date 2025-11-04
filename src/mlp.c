@@ -633,6 +633,21 @@ void loadWeight(char sFileName[], weight **W)
     fclose(pf);
 }
 
+void copyWeights(weight **DW, weight **dW)
+{
+    for (int k = 0; k < D; k++)
+    {
+        for (int i = 0; i < Di[k + 1]; i++)
+        {
+            int cols = Di[k] + 1;
+            for (int j = 0; j < Di[k] + 1; j++)
+            {
+                *(*(DW + k) + i * cols + j) = *(*(dW + k) + i * cols + j);
+            }
+        }
+    }
+}
+
 
 FILE *pfLogFile;
 FILE *pfInput;
@@ -751,9 +766,11 @@ void adamUpdate(weight **W, float eta, weight **dW, weight **M, weight **V, int 
     }
 }
 
+
+
 /**
  * E are the neuron outputs, E[0] input layer, E[D] output layer.  E[k] is of size Di[k]+1 (bias). E[k][Di[k]] = -1
- * 
+ *
  * X are the input patterns, of size patternSize x Di[0]
  * Y are the target outputs, of size patternSize x Di[D]
  *
@@ -763,11 +780,11 @@ void adamUpdate(weight **W, float eta, weight **dW, weight **M, weight **V, int 
  * dW are the delta weights, same size as W.  Same as DW which is used for momentum.
  *
  * Li are the local gradients, Li[k] is of size Di[k].
- * 
+ *
  * M and V are the first and second moment estimates for Adam optimization, same size as W.
- * 
+ *
  * Mask are the dropout masks, mask[k] is of the same size as E[k].
- * 
+ *
  * W[k] : #Di[k+1] x (Di[k]+1)
  * E[k] : #(Di[k]+1)
  * Li[k]: #Di[k+1]
@@ -804,6 +821,7 @@ int main (int argc, char *argv[])
 	int showOutputFx = 0;	
     int calculateAccuracyBinary = 0;
     int dropout = 0;
+    int adam = 1;
 
 	printf ("Pure C implementation of a Multi Layer Perceptron (MLP) neural network\n");
     signal(SIGINT, sigintHandler);
@@ -879,6 +897,8 @@ int main (int argc, char *argv[])
 
     int batchsize = patternSize;
 
+    clock_t inicio = clock();
+
 	while (tries++ < REPLY_FACTOR && !forceBreak)
 	{
         int arr[patternSize];
@@ -930,21 +950,16 @@ int main (int argc, char *argv[])
             }
         }
 
-        //batchUpdate(W, eta,dW, DW);
-        adamUpdate(W, eta, dW, M, V, tries, batchsize);
+        if (adam)
+        {
+            adamUpdate(W, eta, dW, M, V, tries, batchsize);
+        }
+        else
+        {
+            batchUpdate(W, eta,dW, DW);
+        }
 
-            for (int k = 0; k < D; k++)
-            {
-                for (int i = 0; i < Di[k+1]; i++)
-                {
-                    int cols = Di[k]+1;
-                    for (int j = 0; j < Di[k]+1; j++)
-                    {
-                        *(*(DW + k) + i * cols + j)   = *(*(dW + k) + i * cols + j) ;
-                    }
-                }
-            }
-
+        copyWeights(DW, dW);
 
         if ((tries % patternSize) == 0)
         {
@@ -978,6 +993,7 @@ int main (int argc, char *argv[])
 	// printf ("%12.10f", fx (E[0][1], E[0][2], E[0][3]));printf (">");
 	// showRNeuron (E[D], Di[D]);printf ("\n");
 
+    int elapsed = (clock() - inicio) / CLOCKS_PER_SEC;
 
     // Picking the best weights
     loadWeight("mlp.weights", W);
@@ -1019,6 +1035,7 @@ int main (int argc, char *argv[])
     printf("Final RMS: %12.10f\n", rms);
     printf("Final Eta: %f\n", eta);
     printf("1-Bit error success %d/%d rate: %10.4f\n", acc1,patternSize, (acc1/(float)patternSize));
+    printf("Elapsed time %d [s] (%10.2f [min])\n", elapsed, elapsed / 60.0);
 
     return 0;
 }
