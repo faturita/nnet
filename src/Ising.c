@@ -1,8 +1,8 @@
 /**
  *
- * Simulación Proceso de Ising.
+ * Simulaciï¿½n Proceso de Ising.
  *
- * Permite realizar una simulación del proceso de Ising en 1 y 2 dimensiones
+ * Permite realizar una simulaciï¿½n del proceso de Ising en 1 y 2 dimensiones
  * 
  * Fecha:	Mayo 
  *
@@ -61,7 +61,7 @@ void showMagnet(spin *Y, int iRow, int iCol)
             } else {
                 printf (" ");
             }
-            if (j+1<iCol) printf ("");
+            if (j+1<iCol) printf (" ");
             if (j+1==iCol) printf ("|\n");
     }
 
@@ -129,7 +129,7 @@ int alterRandomSpin(spin *Y)
  *
  * La temperatura cae con un factor DECREASE_T
  *
- * Por ser T en ° K el valor tiene que ser positivo.
+ * Por ser T en ï¿½ K el valor tiene que ser positivo.
  *
  **/
 float decreaseTemp(float T)
@@ -214,9 +214,9 @@ energy getEnergy(float J, float H, spin *Y)
  **/ 
 float SimulateIsing()
 {
-    energy Ei;					// Energía inicial
-    energy Ef;					// Energía final
-    energy DE;					// Delta Energía
+    energy Ei;					// Energï¿½a inicial
+    energy Ef;					// Energï¿½a final
+    energy DE;					// Delta Energï¿½a
     energy M;					// Magnetizacion
     spin    *Y;					// Array de spines (Ferromagneto)
     float k=1;					// Constante de Boltzmann

@@ -94,10 +94,10 @@ weight crossover(weight f1, weight f2, int s)
 	char d[4];
 	weight *res;
 	int i;
-	
-	
-	printf ("Tamanios : int %d, float %d, long %d\n",sizeof(int),sizeof(float),sizeof(double));
-	
+
+
+	printf ("Tamanios : int %ld, float %ld, long %ld\n",sizeof(int),sizeof(float),sizeof(double));
+
 	//In[0] = ( (0xFFFF << (n-s)) && I[i2]) +  ( (0xFFFF >> s) && I[i1]);
 	
 	cf1 = &f1;

@@ -7,7 +7,7 @@
  * - Backpropagation learning algorithm.
  * - Momentum support.
  * - RMS error calculation and logging.
- * - Random weight initialization within calculated limits.
+ * - Random weight initialization
  * 
  * 
  * This will have:
@@ -17,6 +17,13 @@
  * - GPU-parallelized version with OpenCL and CUDA.
  * - Support for various loss functions.
  * - KAN neural model support.
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
  * 
  */
 
@@ -74,6 +81,7 @@ int D;
 // Dimension array with the number of neurons in each layer. Dim(Di) = D+1 (because of the input)
 int *Di;
 
+// Random seed
 unsigned int timeseed;
 
 int forceBreak = 0;
@@ -207,6 +215,97 @@ config (char *filename)
     return 1;
 }
 
+void allocate (weight *** W, weight *** dW, weight *** DW, neuron *** mask, neuron *** E, neuron *** Li, weight *** M, weight *** V)
+{
+    int i = 0;
+
+    // D represents how many layers with neurons.
+    *W = (weight **) malloc (sizeof (weight *) * D);
+
+    *M = (weight **) malloc (sizeof (weight *) * D);
+    *V = (weight **) malloc (sizeof (weight *) * D);
+
+
+    *dW = (weight **) malloc (sizeof (weight *) * D);
+    *DW = (weight **) malloc (sizeof (weight *) * D);
+
+    *E = (neuron **) malloc (sizeof (neuron *) * (D + 1));
+    *Li = (neuron **) malloc (sizeof (neuron *) * (D));
+
+    *mask = (weight **) malloc (sizeof (neuron *) * (D+1));
+
+    if (*W == NULL || *E == NULL || *dW == NULL || *Li == NULL || *M == NULL || *V == NULL || *DW == NULL || *mask == NULL)
+    {
+        printf ("Not enough memory.\n");
+        exit (-1);
+    }
+
+    // Di[i] layers size
+    for (i = 0; i < (D + 1); i++)
+    {
+        (*E)[i] = (neuron *) malloc (sizeof (neuron) * (Di[i]+1)); // +1 for the bias
+        (*mask)[i] = (neuron *) malloc (sizeof (neuron) * (Di[i]+1)); // +1 for the bias
+        if ((*E)[i] == NULL)
+        {
+            printf ("Not enough memory.\n");
+            exit (-1);
+        }
+        memset((*E)[i], 0, sizeof (neuron) * (Di[i]+1));
+        memset((*mask)[i], 0, sizeof (neuron) * (Di[i]+1));
+    }
+
+    // Init weight matrix
+    for (i = 0; i < D; i++)
+    {
+        (*W)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i + 1])* (Di[i]+1));
+
+        (*dW)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i + 1]) * (Di[i]+1));
+
+        (*DW)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i + 1]) * (Di[i]+1));
+
+        (*M)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i + 1]) * (Di[i]+1));
+
+        (*V)[i] =
+                (weight *) malloc (sizeof (weight) *
+                                   (Di[i + 1]) * (Di[i]+1));
+
+
+
+        if ((*W)[i] == NULL || (*dW)[i] == NULL || (*M)[i] == NULL || (*V)[i] == NULL)
+        {
+            printf ("Not enough memory.\n");
+            exit (-1);
+        }
+    }
+
+
+    for(i = 0; i < D; i++)
+    {
+        memset((*W)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+        memset((*dW)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+        memset((*DW)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+        memset((*M)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+        memset((*V)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
+    }
+
+
+
+
+    for (int k = D; k > 0; k--)
+    {
+        (*Li)[k - 1] = (neuron *) malloc (sizeof (neuron) * Di[k]);
+
+        memset((*Li)[k - 1],0,sizeof (neuron) * Di[k]);
+    }
+}
 
 
 neuron fx (neuron x, neuron y, neuron z)
@@ -286,6 +385,38 @@ void getRandomWeights (weight ** W)
 }
 
 
+void getDropoutMask(neuron** mask, double rate)
+{
+    float scale = 1.0f / (1.0f - rate);
+
+    // Iterate over hidden layers ONLY (k=0 is the input layer, K=D is the final output layer)
+    for (int k = 0; k <= D; k++)
+    {
+        for (int i = 0; i < Di[k]; i++) // Iterate neurons, skip bias unit
+        {
+            if (k >= 1 && k < D) // Only apply dropout to hidden layers
+            {
+                if ((double)rand() / RAND_MAX < rate)
+                {
+                    mask[k][i] = 0.0; // Drop neuron
+                }
+                else
+                {
+                    mask[k][i] = scale; // Keep and scale (inverted dropout)
+                }
+            }
+            else
+            {
+                mask[k][i] = 1.0; // No dropout for input/output layers
+            }
+        }
+        // Ensure the bias unit itself is never dropped
+        // Assuming the bias unit is the last element at index Di[k]
+        mask[k][Di[k]] = 1.0; 
+    }
+}
+
+
 float activation(float fVal) {
 	return ( (exp( fVal ) - exp ( -fVal ))/(exp(fVal) + exp(-fVal)));
 }
@@ -309,6 +440,14 @@ void multiply(neuron *output, neuron * input, weight * W, int rows, int cols)
     }
 }
 
+void applyDropoutMask(neuron *E, weight *mask, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        E[i] = E[i] * mask[i];
+    }
+}
+
 
 void transpose_multiply_skip_bias(neuron *out, neuron *in, weight *W, int rows_prev, int rows_next)
 {
@@ -326,6 +465,17 @@ void transpose_multiply_skip_bias(neuron *out, neuron *in, weight *W, int rows_p
 
 
 
+void mforward(weight ** W, neuron ** E, neuron ** mask)
+{
+    for(int k=1; k<=D; k++)
+    {
+        multiply(E[k],E[k-1], W[k-1], Di[k], (Di[k-1]+1));
+        applyDropoutMask(E[k], mask[k], Di[k]);
+        E[k][Di[k]] = -1; // Fixed bias
+    }
+    
+}
+
 void forward(weight ** W, neuron ** E)
 {
     for(int k=1; k<=D; k++)
@@ -337,86 +487,37 @@ void forward(weight ** W, neuron ** E)
 }
 
 
-void allocate (weight *** W, weight *** dW, neuron *** E, neuron *** Li, weight *** M, weight *** V)
+
+
+void mback(neuron **Li, weight ** W, neuron ** E, neuron * Y, neuron ** mask)
 {
-    int i = 0;
+    int k,j,i;
 
-    // D represents how many layers with neurons.
-    *W = (weight **) malloc (sizeof (weight *) * D);
-
-    *M = (weight **) malloc (sizeof (weight *) * D);
-    *V = (weight **) malloc (sizeof (weight *) * D);
-
-
-    *dW = (weight **) malloc (sizeof (weight *) * D);
-    *E = (neuron **) malloc (sizeof (neuron *) * (D + 1));
-    *Li = (neuron **) malloc (sizeof (neuron *) * (D));
-
-    if (*W == NULL || *E == NULL || *dW == NULL || *Li == NULL || *M == NULL || *V == NULL)
+    for (k = D; k > 0; k--)
     {
-        printf ("Not enough memory.\n");
-        exit (-1);
+        memset(*(Li + (k - 1)),0,sizeof (neuron) * Di[k]);
     }
 
-    // Di[i] layers size
-    for (i = 0; i < (D + 1); i++)
+    for(k=D;k>0;k--)
     {
-        (*E)[i] = (neuron *) malloc (sizeof (neuron) * (Di[i]+1)); // +1 for the bias
-        if ((*E)[i] == NULL)
+        if (k==D)
         {
-            printf ("Not enough memory.\n");
-            exit (-1);
+            for(int j=0;j<Di[k];j++)
+                Li[k-1][j] = derivative(E[k][j]) * (E[k][j] - Y[j]);
         }
-        memset((*E)[i], 0, sizeof (neuron) * (Di[i]+1));
-    }
-
-    // Init weight matrix
-    for (i = 0; i < D; i++)
-    {
-        (*W)[i] =
-                (weight *) malloc (sizeof (weight) *
-                                   (Di[i + 1])* (Di[i]+1));
-
-        (*dW)[i] =
-                (weight *) malloc (sizeof (weight) *
-                                   (Di[i + 1]) * (Di[i]+1));
-
-        (*M)[i] =
-                (weight *) malloc (sizeof (weight) *
-                                   (Di[i + 1]) * (Di[i]+1));
-
-        (*V)[i] =
-                (weight *) malloc (sizeof (weight) *
-                                   (Di[i + 1]) * (Di[i]+1));
-
-
-
-        if ((*W)[i] == NULL || (*dW)[i] == NULL || (*M)[i] == NULL || (*V)[i] == NULL)
+        else
         {
-            printf ("Not enough memory.\n");
-            exit (-1);
-        }
+            transpose_multiply_skip_bias(Li[k-1], Li[k], W[k], Di[k], Di[k+1]);
+            for(int j=0;j<Di[k];j++)
+                Li[k-1][j] = derivative(E[k][j]) * Li[k-1][j] * mask[k][j];
+        } 
+
     }
 
+    // return Li
 
-    for(i = 0; i < D; i++)
-    {
-        memset((*W)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
-        memset((*dW)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
-        memset((*M)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
-        memset((*V)[i], 0, sizeof (weight) * (Di[i + 1]) * (Di[i]+1));
-    }
-
-
-
-
-    for (int k = D; k > 0; k--)
-    {
-        (*Li)[k - 1] = (neuron *) malloc (sizeof (neuron) * Di[k]);
-
-        memset((*Li)[k - 1],0,sizeof (neuron) * Di[k]);
-    }
 }
+
 
 
 void back(neuron **Li, weight ** W, neuron ** E, neuron * Y)
@@ -437,17 +538,10 @@ void back(neuron **Li, weight ** W, neuron ** E, neuron * Y)
         }
         else
         {
-            //amultiply(Li[k-1], Li[k], W[k], Di[k], Di[k+1]);
             transpose_multiply_skip_bias(Li[k-1], Li[k], W[k], Di[k], Di[k+1]);
             for(int j=0;j<Di[k];j++)
                 Li[k-1][j] = derivative(E[k][j]) * Li[k-1][j];
-        }
-
-                        //dW = (weight) ((DELTA_WEIGHT) *
-                        //       Li[(k) - 1][i] * E[k - 1][j]);
-
-        // Update weights
-        //dW = 0.001 * L * E[k-1];       
+        } 
 
     }
 
@@ -514,7 +608,7 @@ void saveWeight(char sFileName[], weight **W)
 }
 
 /**
- * Carga de sFileName una copia con los valores de los pesos sinapticos W
+ * Load weights from file
  *
  *
  **/
@@ -603,7 +697,7 @@ int checkBinary(neuron *Ei,int iSizeInput, neuron *Eo, int iSizeOutput)
     return oks;
 }
 
-void batchUpdate(weight **W, float eta, weight **dW)
+void batchUpdate(weight **W, float eta, weight **dW, weight **DW)
 {
     for (int k = 0; k < D; k++)
     {
@@ -612,8 +706,7 @@ void batchUpdate(weight **W, float eta, weight **dW)
             int cols = Di[k] + 1;
             for (int j = 0; j < Di[k] + 1; j++)
             {
-                // printf("dW[%d][%d][%d]\n",k,i,j);
-                *(*(W + k) + i * cols + j) +=  (-eta) * (*(*(dW + k) + i * cols + j));
+                *(*(W + k) + i * cols + j) +=  (-eta) *  (*(*(dW + k) + i * cols + j)) + (MOMENTUM * (*(*(DW + k) + i * cols + j)));
             }
         }
     }
@@ -660,17 +753,31 @@ void adamUpdate(weight **W, float eta, weight **dW, weight **M, weight **V, int 
 
 /**
  * E are the neuron outputs, E[0] input layer, E[D] output layer.  E[k] is of size Di[k]+1 (bias). E[k][Di[k]] = -1
+ * 
  * X are the input patterns, of size patternSize x Di[0]
  * Y are the target outputs, of size patternSize x Di[D]
  *
  * W are the synaptic weights, W[k] is the weight matrix between layer k and k+1, of size Di[k+1] x (Di[k]+1)
  *      So W[k] has Di[k+1] neurons rows and Di[k]+1 columns inputs to the layer (including the extra bias).
  *
- * dW are the delta weights, same size as W.
+ * dW are the delta weights, same size as W.  Same as DW which is used for momentum.
  *
  * Li are the local gradients, Li[k] is of size Di[k].
+ * 
+ * M and V are the first and second moment estimates for Adam optimization, same size as W.
+ * 
+ * Mask are the dropout masks, mask[k] is of the same size as E[k].
+ * 
+ * W[k] : #Di[k+1] x (Di[k]+1)
+ * E[k] : #(Di[k]+1)
+ * Li[k]: #Di[k+1]
  *
- *
+ * Example:
+ * D=2
+ * Di = 3,5,1
+ * W = [ W[0] = 5 x (3+1) , W[1] = 1 x (5+1) ]
+ * E = [ E[0] = 3+1 , E[1] = 5+1 , E[2] = 1+1 ]
+ * Li= [ Li[0] = 5 , Li[1] = 1
  *
  */
 int main (int argc, char *argv[])
@@ -681,7 +788,10 @@ int main (int argc, char *argv[])
 	neuron **X;		// training set
 
 	weight **dW;	// Delta sinaptic weights.
+    weight **DW;    // Temporary delta weights for batch processing
     neuron **Li;	// Local gradients
+
+    neuron **mask;  // Dropout mask
 
     weight **M;    // First moment estimates for Adam
     weight **V;    // Second moment estimates for Adam
@@ -693,6 +803,7 @@ int main (int argc, char *argv[])
 	int i, s;		
 	int showOutputFx = 0;	
     int calculateAccuracyBinary = 0;
+    int dropout = 0;
 
 	printf ("Pure C implementation of a Multi Layer Perceptron (MLP) neural network\n");
     signal(SIGINT, sigintHandler);
@@ -720,7 +831,7 @@ int main (int argc, char *argv[])
         printf ("No log.\n");
     }
 
-	allocate (&W, &dW, &E, &Li, &M, &V);
+	allocate (&W, &dW, &DW, &mask, &E, &Li, &M, &V);
 
     if ((argc >2 && strcmp (argv[2], "-l") == 0))
 	{
@@ -762,7 +873,7 @@ int main (int argc, char *argv[])
 
     long tries = 0;
 
-    float rms = 0.0f, lastRms = 0.0f;
+    float rms = 0.0f, lastRms = -1.0f;
 
     int updates = 0;
 
@@ -789,8 +900,19 @@ int main (int argc, char *argv[])
             //iChance = getProb (0, patternSize);
             iChance = b;
             loadPattern(E[0],X[arr[iChance]]);
-            forward(W, E);						// Updates E
-            back(Li,W,E,Y[arr[iChance]]);			// Updates Li
+
+            if (dropout)
+            {
+                getDropoutMask(mask, 0.1); 
+
+                mforward(W, E, mask);						    // Updates E
+                mback(Li,W,E,Y[arr[iChance]], mask);			// Updates Li
+            }
+            else
+            {
+                forward(W, E);						    // Updates E
+                back(Li,W,E,Y[arr[iChance]]);			// Updates Li
+            }
 
             for (int k = 0; k < D; k++)
             {
@@ -808,8 +930,20 @@ int main (int argc, char *argv[])
             }
         }
 
-        //batchUpdate(W, eta, dW);
+        //batchUpdate(W, eta,dW, DW);
         adamUpdate(W, eta, dW, M, V, tries, batchsize);
+
+            for (int k = 0; k < D; k++)
+            {
+                for (int i = 0; i < Di[k+1]; i++)
+                {
+                    int cols = Di[k]+1;
+                    for (int j = 0; j < Di[k]+1; j++)
+                    {
+                        *(*(DW + k) + i * cols + j)   = *(*(dW + k) + i * cols + j) ;
+                    }
+                }
+            }
 
 
         if ((tries % patternSize) == 0)
@@ -817,6 +951,13 @@ int main (int argc, char *argv[])
             rms = logQuadraticError (W, E, X, Y, patternSize);
             if (rms < RMS_BREAK)
                 break;
+
+            if (lastRms < 0.0f || rms < lastRms)
+            {
+                lastRms = rms;
+                saveWeight("mlp.weights", W);
+                printf("Weights saved at try %ld with RMS %12.10f\n", tries, rms);
+            }
 
         }
 
@@ -838,6 +979,11 @@ int main (int argc, char *argv[])
 	// showRNeuron (E[D], Di[D]);printf ("\n");
 
 
+    // Picking the best weights
+    loadWeight("mlp.weights", W);
+    printf("Final evaluation with best weights:\n");
+
+
     int acc=0,acc1 = 0;
     int oks = 0;
 	for(int s=0;s<patternSize;s++)
@@ -852,6 +998,7 @@ int main (int argc, char *argv[])
 		printf (">");	
 		showRNeuron (E[D], Di[D]);printf ("\n");
 
+
         if (calculateAccuracyBinary)
         {
             int res = checkBinary(E[D],Di[D], Y[iChance], Di[D]);
@@ -863,7 +1010,7 @@ int main (int argc, char *argv[])
         }
 	}
 
-    saveWeight("mlp.weights", W);
+    rms = logQuadraticError (W, E, X, Y, patternSize);
 
     printf("Success %d/%d rate: %10.4f\n", acc,patternSize, (acc/(float)patternSize));
     printf("OKs: %d, %d\n", oks, patternSize * Di[0]);
