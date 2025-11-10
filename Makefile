@@ -15,7 +15,7 @@ $(PRODUCTO):	$(FUENTES)
 	gcc $(CFLAGS) -o $(BIN)Kohonen           src/commandline.c src/parameter.c                  src/KohonenFeatureMapping.c          src/arrayView.c     src/mathNeuron.c src/logger.c $(LIB)
 	gcc $(CFLAGS) -o $(BIN)AnnealingHopfield src/parameter.c src/gridParser.c src/AnnealingHopfield.c                                  src/mathNeuron.c $(LIB)
 	gcc $(CFLAGS) -o $(BIN)Autoencoder       src/praxis.c src/parameter.c                  src/Autoencoder.c                    src/arrayView.c     src/mathNeuron.c src/logger.c $(LIB)
-	gcc $(CFLAGS) -o $(BIN)nnet		         src/praxis.c src/parameter.c                  src/mlp.c           			         src/arrayView.c     src/mathNeuron.c src/logger.c  $(LIB)
+	gcc $(CFLAGS) -o $(BIN)nnet		         src/commandline.c src/praxis.c src/parameter.c                  src/mlp.c           			         src/arrayView.c     src/mathNeuron.c src/logger.c  $(LIB)
 
 
 Showme: $(FUENTES)

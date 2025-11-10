@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h> 
+
 
 #ifndef NEURONTYPE
 #define NEURONTYPE
@@ -40,7 +42,7 @@ typedef float neuron;
 typedef float weight;
 #endif
 
-
+#include "commandline.h"
 #include "mathNeuron.h"
 #include "arrayView.h"
 #include "parameter.h"
@@ -367,12 +369,10 @@ void getRandomWeights (weight ** W)
 
     for (k = 0; k < D; k++)
     {
-        float fanin, fanout;
+        weight fanin= (weight)getFanIn(k);
+        weight fanout = (weight)getFanOut(k);
 
-        fanin = (float)getFanIn(k);
-        fanout = (float)getFanOut(k);
-
-        float limit = sqrtf(6.0f / (fanin + fanout));
+        weight limit = sqrt(6.0 / (fanin + fanout));
 
 
         for (i=0;i<Di[k + 1]*(Di[k]+1);i++)
@@ -387,7 +387,7 @@ void getRandomWeights (weight ** W)
 
 void getDropoutMask(neuron** mask, double rate)
 {
-    float scale = 1.0f / (1.0f - rate);
+    weight scale = 1.0f / (1.0f - rate);
 
     // Iterate over hidden layers ONLY (k=0 is the input layer, K=D is the final output layer)
     for (int k = 0; k <= D; k++)
@@ -417,18 +417,30 @@ void getDropoutMask(neuron** mask, double rate)
 }
 
 
-float activation(float fVal) {
-	return ( (exp( fVal ) - exp ( -fVal ))/(exp(fVal) + exp(-fVal)));
+//weight activation(weight fVal) {
+//	return ( (exp( fVal ) - exp ( -fVal ))/(exp(fVal) + exp(-fVal)));
+//}
+
+//weight derivative(weight fVal) {
+//    return (1 - fVal * fVal);
+//}
+
+
+weight activation(weight fVal) {
+    // Softsign function
+    return fVal / (1.0f + fabs(fVal));
 }
 
-float derivative(float fVal) {
-    return (1 - fVal * fVal);
+weight derivative(weight fVal) {
+    // Derivative of Softsign, expressed in terms of its output (fVal)
+    weight abs_fVal = fabs(fVal);
+    return (1.0f - abs_fVal) * (1.0f - abs_fVal);
 }
 
 void multiply(neuron *output, neuron * input, weight * W, int rows, int cols)
 {
     //printf("Multiply %d x %d\n", rows, cols);
-    float aux = 0;
+    weight aux = 0;
     for(int i=0; i<rows; i++)
     {
         aux = 0;
@@ -454,7 +466,7 @@ void transpose_multiply_skip_bias(neuron *out, neuron *in, weight *W, int rows_p
     // rows_prev = Di[k], rows_next = Di[k+1]
     int cols = rows_prev + 1; // because W stored with +1 bias column
     for (int i = 0; i < rows_prev; ++i) {
-        float aux = 0.0f;
+        weight aux = 0.0f;
         for (int j = 0; j < rows_next; ++j) {
             // W[j * cols + i] is weight from neuron i in layer k to neuron j in layer k+1
             aux += in[j] * W[j * cols + i];
@@ -664,11 +676,11 @@ void loadPattern(neuron * dest, neuron * X)
 	dest[Di[0]] = -1; // Fixed bias
 }
 
-float getQuadraticError (float **W, float **E, float **X, float **Y,
+weight getQuadraticError (weight **W, neuron **E, neuron **X, neuron **Y,
                    int patternSize)
 {
     int p, j;
-    float fQErr=0;
+    weight fQErr=0;
 
     for (p = 0; p < patternSize; p++)
     {
@@ -681,14 +693,14 @@ float getQuadraticError (float **W, float **E, float **X, float **Y,
 
     }
 
-    fQErr = fQErr / (float) patternSize;
+    fQErr = fQErr / (neuron) patternSize;
     return fQErr;
 }
 
-float logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
+weight logQuadraticError (weight ** W, neuron ** E, neuron ** X, neuron ** Y,
                    int patternSize)
 {
-    float rms=getQuadraticError (W, E, X, Y, patternSize);
+    weight rms=getQuadraticError (W, E, X, Y, patternSize);
     if (TRUE)
     {
         sprintf (logBuffer, "%12.10f\n",
@@ -712,7 +724,7 @@ int checkBinary(neuron *Ei,int iSizeInput, neuron *Eo, int iSizeOutput)
     return oks;
 }
 
-void batchUpdate(weight **W, float eta, weight **dW, weight **DW)
+void batchUpdate(weight **W, weight eta, weight **dW, weight **DW)
 {
     for (int k = 0; k < D; k++)
     {
@@ -727,7 +739,7 @@ void batchUpdate(weight **W, float eta, weight **dW, weight **DW)
     }
 }
 
-void adamUpdate(weight **W, float eta, weight **dW, weight **M, weight **V, int t, int batchsize)
+void adamUpdate(weight **W, weight eta, weight **dW, weight **M, weight **V, int t, int batchsize)
 {
     for (int k = 0; k < D; k++)
     {
@@ -851,7 +863,7 @@ int main (int argc, char *argv[])
 
 	allocate (&W, &dW, &DW, &mask, &E, &Li, &M, &V);
 
-    if ((argc >2 && strcmp (argv[2], "-l") == 0))
+    if (isPresentCommandLineParameter(argc, argv, "-l"))
 	{
         printf("Loading weights from file mlp.weights\n");
         loadWeight("mlp.weights", W);
@@ -887,11 +899,11 @@ int main (int argc, char *argv[])
 	forward(W, E);
 	showRNeuron (E[D], Di[D]);printf ("\n");
 
-	float eta = DELTA_WEIGHT;
+	weight eta = DELTA_WEIGHT;
 
     long tries = 0;
 
-    float rms = 0.0f, lastRms = -1.0f;
+    weight rms = 0.0f, lastRms = -1.0f;
 
     int updates = 0;
 
@@ -1028,13 +1040,13 @@ int main (int argc, char *argv[])
 
     rms = logQuadraticError (W, E, X, Y, patternSize);
 
-    printf("Success %d/%d rate: %10.4f\n", acc,patternSize, (acc/(float)patternSize));
+    printf("Success %d/%d rate: %10.4f\n", acc,patternSize, (acc/(weight)patternSize));
     printf("OKs: %d, %d\n", oks, patternSize * Di[0]);
     printf("Seed: %u\n", timeseed);
     printf("Tries: %ld\n", tries);
     printf("Final RMS: %12.10f\n", rms);
     printf("Final Eta: %f\n", eta);
-    printf("1-Bit error success %d/%d rate: %10.4f\n", acc1,patternSize, (acc1/(float)patternSize));
+    printf("1-Bit error success %d/%d rate: %10.4f\n", acc1,patternSize, (acc1/(weight)patternSize));
     printf("Elapsed time %d [s] (%10.2f [min])\n", elapsed, elapsed / 60.0);
 
     return 0;
