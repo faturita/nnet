@@ -4,42 +4,43 @@ Featuring Hopfield 82 and Ising Model
 
 Resumen:
 
+AÃ±o Dominis: 2023
 Lenguaje: ANSI-C
 Plataforma: IBM-PC i586 Linux Mandrake 7.1
 Gcc: gcc version 2.95.3 19991030 (prerelease)
 
-Sinapsis:
+# Hopfield
 
 ./bin/HopfieldNet [opcion]
 
 
-1	-	Comprobación de capacidad
+* ComprobaciÃ³n de capacidad
 
-	Obtiene los parámetros de parameter.conf, ejecuta calculando la capacidad
-	de la red y genera el archivo de salida "hopnet.log" con la información 
+	Obtiene los parÃ¡metros de parameter.conf, ejecuta calculando la capacidad
+	de la red y genera el archivo de salida "hopnet.log" con la informaciÃ³n 
 	generada.
 
-2	-	Comprobación de conexiones perdidas sobre capacidad.
+* ComprobaciÃ³n de conexiones perdidas sobre capacidad.
 	
-	Genera la red segun los parámetros de parameter.conf, y comienza a eliminar
+	Genera la red segun los parÃ¡metros de parameter.conf, y comienza a eliminar
 	conexiones aleatoriamente, registrando la cantidad de memorias almacenadas
 	correctamente en funcion del porcentage de las conexiones eliminadas	
 
-3	-	Verificación de estados espúreos.
+* VerificaciÃ³n de estados espÃºreos.
 
-	Genera memorias en base a los parámetros de parameter.conf y de las grillas
+	Genera memorias en base a los parÃ¡metros de parameter.conf y de las grillas
 	grid.spurious.conf con los patrones a almacenar y grid.spurious.in con el 
-	patron de entrada para la red.  Por la configuración de los patrones, se 
+	patron de entrada para la red.  Por la configuraciÃ³n de los patrones, se 
 	la red converge a una memoria espuria.
 
-4	-	Busqueda asociativa sobre grillas.
+* Busqueda asociativa sobre grillas.
 
 	Genera la red en base a los patrones a almacenar contenidos en grid.data.conf
 	e ingresa a la red el patron grid.in, convergiendo a una de las memorias almacenadas.
 
-5	-	Generacion de patrones en secuencia temporal.
+* Generacion de patrones en secuencia temporal.
 	
-	Carga los patrones en grid.data.conf correlacionados entre sí de forma que al ingresar uno
+	Carga los patrones en grid.data.conf correlacionados entre sÃ­ de forma que al ingresar uno
 	como entrada converga al minimo que corresponde con el otro patron.  Esto esta implementado
 	solo para procesar 3 patrones en grilla con el orden 1->0->2->1.
 
@@ -68,10 +69,10 @@ La salida la genera en el archivo "ising.log"
 En ./dumps/ se encuentran las salidas de los procesos ejecutados:
 
 * hopnet.200.10.log		Salida comprobacion conexiones perdidas en una red de 200 neuronas y 10 patrones
-* hopnet.300.30.log		Salida comprobación conexiones perdidas en una red de 300 neuronas y 30 patrones
-* hopnet.400.50.log		Salida comprobación conexiones perdidas enuna red de 400 neuronas y 50 patrones
-* hopnet.capacity.log		Salida comprobación capacidad de la red.
-* ising.log                       Salida obtención Temperatura Crítica
+* hopnet.300.30.log		Salida comprobaciÃ³n conexiones perdidas en una red de 300 neuronas y 30 patrones
+* hopnet.400.50.log		Salida comprobaciÃ³n conexiones perdidas enuna red de 400 neuronas y 50 patrones
+* hopnet.capacity.log		Salida comprobaciÃ³n capacidad de la red.
+* ising.log                       Salida obtenciÃ³n Temperatura CrÃ­tica
 
 
 
